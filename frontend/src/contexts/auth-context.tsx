@@ -142,67 +142,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /**
    * Login with email and password
    */
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const res = await apiClient.post<{
-        user: User;
-        application: Application;
-        accessToken: string;
-      }>('/auth/login', { email, password });
+  const login = useCallback(
+    async (email: string, password: string) => {
+      setIsLoading(true);
+      try {
+        const res = await apiClient.post<{
+          user: User;
+          application: Application;
+          accessToken: string;
+        }>('/auth/login', { email, password });
 
-      const { user: loggedInUser, application: app, accessToken: token } =
-        res.data!;
+        const { user: loggedInUser, application: app, accessToken: token } =
+          res.data!;
 
-      apiClient.setAccessToken(token);
-      setAccessTokenState(token);
-      setUser(loggedInUser);
-      setApplication(app);
+        apiClient.setAccessToken(token);
+        setAccessTokenState(token);
+        setUser(loggedInUser);
+        setApplication(app);
 
-      handleRoleRedirect(loggedInUser.role);
+        handleRoleRedirect(loggedInUser.role);
 
-      return { user: loggedInUser, application: app };
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        return { user: loggedInUser, application: app };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [handleRoleRedirect]
+  );
 
   /**
    * Register a new user
    */
-  const signup = async (data: {
-    email: string;
-    password: string;
-    phone?: string;
-  }) => {
-    setIsLoading(true);
-    try {
-      const res = await apiClient.post<{
-        user: User;
-        application: Application;
-        accessToken: string;
-      }>('/auth/signup', data);
+  const signup = useCallback(
+    async (data: {
+      email: string;
+      password: string;
+      phone?: string;
+    }) => {
+      setIsLoading(true);
+      try {
+        const res = await apiClient.post<{
+          user: User;
+          application: Application;
+          accessToken: string;
+        }>('/auth/signup', data);
 
-      const { user: newUser, application: app, accessToken: token } =
-        res.data!;
+        const { user: newUser, application: app, accessToken: token } =
+          res.data!;
 
-      apiClient.setAccessToken(token);
-      setAccessTokenState(token);
-      setUser(newUser);
-      setApplication(app);
+        apiClient.setAccessToken(token);
+        setAccessTokenState(token);
+        setUser(newUser);
+        setApplication(app);
 
-      handleRoleRedirect(newUser.role);
+        handleRoleRedirect(newUser.role);
 
-      return { user: newUser, application: app };
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        return { user: newUser, application: app };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [handleRoleRedirect]
+  );
 
   /**
    * Logout user and clear session
    */
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setIsLoading(true);
     try {
       await apiClient.post('/auth/logout', {}).catch(() => {});
@@ -214,12 +220,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
       router.push('/login');
     }
-  };
+  }, [router]);
 
   /**
    * Explicitly refresh session
    */
-  const refreshSession = async (): Promise<boolean> => {
+  const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
       const res = await apiClient.post<{
         accessToken: string;
@@ -240,35 +246,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessTokenState(null);
       return false;
     }
-  };
+  }, []);
 
   /**
    * Helper to update application stage in local state
    */
-  const updateApplicationStage = (newStage: ApplicationStage) => {
-    setApplication((prev) =>
-      prev
+  const updateApplicationStage = useCallback((newStage: ApplicationStage) => {
+    setApplication((prev) => {
+      if (prev && prev.stage === newStage) return prev;
+      return prev
         ? { ...prev, stage: newStage, updatedAt: new Date().toISOString() }
-        : null
-    );
-  };
+        : null;
+    });
+  }, []);
 
   /**
    * Mock session helper for UI development / preview testing
    */
-  const setMockSession = (
-    mockUser: User | null,
-    mockApp: Application | null
-  ) => {
-    setUser(mockUser);
-    setApplication(mockApp);
-    setAccessTokenState(mockUser ? 'mock_jwt_token_demo' : null);
-    if (mockUser) {
-      apiClient.setAccessToken('mock_jwt_token_demo');
-    } else {
-      apiClient.clearAccessToken();
-    }
-  };
+  const setMockSession = useCallback(
+    (mockUser: User | null, mockApp: Application | null) => {
+      setUser(mockUser);
+      setApplication(mockApp);
+      setAccessTokenState(mockUser ? 'mock_jwt_token_demo' : null);
+      if (mockUser) {
+        apiClient.setAccessToken('mock_jwt_token_demo');
+      } else {
+        apiClient.clearAccessToken();
+      }
+    },
+    []
+  );
 
   return (
     <AuthContext.Provider

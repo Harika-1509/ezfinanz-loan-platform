@@ -46,11 +46,11 @@ export const createApp = (): Application => {
   // Request Logging
   app.use(requestLogger());
 
-  // Static uploads directory
-  const uploadsDir = path.isAbsolute(config.UPLOAD_DIR)
-    ? config.UPLOAD_DIR
-    : path.resolve(process.cwd(), config.UPLOAD_DIR);
-  app.use('/uploads', express.static(uploadsDir));
+  // Static uploads directory (supports both root workspace uploads and local backend uploads)
+  const rootUploadsDir = path.resolve(__dirname, '../../uploads');
+  const backendUploadsDir = path.resolve(process.cwd(), config.UPLOAD_DIR);
+  app.use('/uploads', express.static(rootUploadsDir));
+  app.use('/uploads', express.static(backendUploadsDir));
 
   // Direct Health check endpoint
   app.use('/health', healthRoutes);

@@ -125,6 +125,17 @@ interface ApplicationData {
   selfie?: Selfie | null;
 }
 
+const getMediaUrl = (url: string | null | undefined) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const backendBase = process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, '')
+    : 'http://localhost:5000';
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export function CustomerDashboard({
   onNavigateToStage,
 }: {
@@ -173,7 +184,9 @@ export function CustomerDashboard({
 
       if (res.data?.application) {
         setApplication(res.data.application);
-        updateApplicationStage(res.data.application.stage);
+        if (authApp?.stage !== res.data.application.stage) {
+          updateApplicationStage(res.data.application.stage);
+        }
       } else {
         // Fallback to /auth/me
         const meRes = await apiClient.get<{
@@ -183,7 +196,9 @@ export function CustomerDashboard({
 
         if (meRes.data?.application) {
           setApplication(meRes.data.application);
-          updateApplicationStage(meRes.data.application.stage);
+          if (authApp?.stage !== meRes.data.application.stage) {
+            updateApplicationStage(meRes.data.application.stage);
+          }
         } else {
           setApplication(null);
         }
@@ -198,7 +213,7 @@ export function CustomerDashboard({
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [updateApplicationStage]);
+  }, [authApp?.stage, updateApplicationStage]);
 
   useEffect(() => {
     fetchApplicationDetails();
@@ -1140,12 +1155,15 @@ export function CustomerDashboard({
                 {selfie ? (
                   <div className="flex items-start space-x-4 pt-1">
                     {selfie.photoUrl && (
-                      <div className="relative h-20 w-16 flex-shrink-0 overflow-hidden rounded-xl border-2 border-emerald-500 shadow-sm">
+                      <div className="relative h-20 w-16 flex-shrink-0 overflow-hidden rounded-xl border-2 border-emerald-500 shadow-sm bg-slate-100 dark:bg-slate-800">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={selfie.photoUrl}
+                          src={getMediaUrl(selfie.photoUrl)}
                           alt="Biometric Selfie"
                           className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = 'none';
+                          }}
                         />
                       </div>
                     )}

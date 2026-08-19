@@ -54,7 +54,9 @@ export default function ApplyPage() {
       if (res.data?.application?.stage) {
         const s = res.data.application.stage;
         setCurrentStage(s);
-        updateApplicationStage(s);
+        if (application?.stage !== s) {
+          updateApplicationStage(s);
+        }
 
         // If unverified 2FA, redirect to /verify
         if (
@@ -69,7 +71,7 @@ export default function ApplyPage() {
     } finally {
       setIsInitializing(false);
     }
-  }, [router, updateApplicationStage]);
+  }, [application?.stage, router, updateApplicationStage]);
 
   useEffect(() => {
     syncStage();
