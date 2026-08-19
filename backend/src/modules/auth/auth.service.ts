@@ -374,7 +374,62 @@ export class AuthService {
   }
 
   /**
-   * Get authenticated user profile with active loan application and all step details
+   * Helper to format Prisma Application Decimals into standard numbers for UI
+   */
+  private formatApplicationPayload(application: any): any {
+    if (!application) return null;
+    return {
+      ...application,
+      loanTerms: application.loanTerms
+        ? {
+            ...application.loanTerms,
+            amount: Number(application.loanTerms.amount || 0),
+            interestRate: Number(application.loanTerms.interestRate || 0),
+            processingFee: Number(application.loanTerms.processingFee || 0),
+            gst: Number(application.loanTerms.gst || 0),
+            adminCharges: Number(application.loanTerms.adminCharges || 0),
+            totalDeductions: Number(
+              application.loanTerms.totalDeductions ??
+                (Number(application.loanTerms.processingFee || 0) +
+                  Number(application.loanTerms.gst || 0) +
+                  Number(application.loanTerms.adminCharges || 0))
+            ),
+            netDisbursement: Number(
+              application.loanTerms.netDisbursement ??
+                (Number(application.loanTerms.amount || 0) -
+                  Number(application.loanTerms.totalDeductions || 0))
+            ),
+            emi: Number(application.loanTerms.emi || 0),
+            totalInterest: Number(application.loanTerms.totalInterest || 0),
+            totalRepayment: Number(application.loanTerms.totalRepayment || 0),
+            irr: Number(application.loanTerms.irr || 0),
+          }
+        : null,
+      eligibilityCheck: application.eligibilityCheck
+        ? {
+            ...application.eligibilityCheck,
+            income: Number(application.eligibilityCheck.income || 0),
+            requestedAmount: Number(application.eligibilityCheck.requestedAmount || 0),
+            existingDebts: Number(application.eligibilityCheck.existingDebts || 0),
+            creditScore: application.eligibilityCheck.creditScore
+              ? Number(application.eligibilityCheck.creditScore)
+              : null,
+            dtiRatio: application.eligibilityCheck.dtiRatio
+              ? Number(application.eligibilityCheck.dtiRatio)
+              : null,
+            maxEligibleAmount: application.eligibilityCheck.maxEligibleAmount
+              ? Number(application.eligibilityCheck.maxEligibleAmount)
+              : null,
+            interestRate: application.eligibilityCheck.interestRate
+              ? Number(application.eligibilityCheck.interestRate)
+              : null,
+          }
+        : null,
+    };
+  }
+
+  /**
+   * Get user profile with active loan application and all onboarding relations
    */
   public async getMe(
     userId: string
@@ -402,7 +457,7 @@ export class AuthService {
 
     return {
       user: this.sanitizeUser(user),
-      application,
+      application: this.formatApplicationPayload(application),
     };
   }
 
@@ -431,45 +486,9 @@ export class AuthService {
       },
     });
 
-    if (!application) {
-      return {
-        user: this.sanitizeUser(user),
-        application: null,
-      };
-    }
-
     return {
       user: this.sanitizeUser(user),
-      application: {
-        ...application,
-        loanTerms: application.loanTerms
-          ? {
-              ...application.loanTerms,
-              amount: Number(application.loanTerms.amount),
-              interestRate: Number(application.loanTerms.interestRate),
-              processingFee: Number(application.loanTerms.processingFee),
-              gst: Number(application.loanTerms.gst),
-              adminCharges: Number(application.loanTerms.adminCharges),
-              totalDeductions: Number(application.loanTerms.totalDeductions),
-              netDisbursement: Number(application.loanTerms.netDisbursement),
-              emi: Number(application.loanTerms.emi),
-              totalInterest: Number(application.loanTerms.totalInterest),
-              totalRepayment: Number(application.loanTerms.totalRepayment),
-              irr: Number(application.loanTerms.irr),
-            }
-          : null,
-        eligibilityCheck: application.eligibilityCheck
-          ? {
-              ...application.eligibilityCheck,
-              income: Number(application.eligibilityCheck.income),
-              requestedAmount: Number(application.eligibilityCheck.requestedAmount),
-              existingDebts: Number(application.eligibilityCheck.existingDebts),
-              maxEligibleAmount: application.eligibilityCheck.maxEligibleAmount
-                ? Number(application.eligibilityCheck.maxEligibleAmount)
-                : null,
-            }
-          : null,
-      },
+      application: this.formatApplicationPayload(application),
     };
   }
 

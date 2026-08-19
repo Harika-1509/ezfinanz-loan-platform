@@ -315,6 +315,53 @@ export function CustomerDashboard({
     return `•••• •••• ${val.slice(-4)}`;
   };
 
+  const formatCurrency = (val: number | string | null | undefined, maxDecimals = 0) => {
+    if (val === null || val === undefined || isNaN(Number(val))) return '0';
+    return Number(val).toLocaleString('en-IN', {
+      maximumFractionDigits: maxDecimals,
+      minimumFractionDigits: maxDecimals > 0 ? maxDecimals : 0,
+    });
+  };
+
+  const formatPercent = (val: number | string | null | undefined, maxDecimals = 2) => {
+    if (val === null || val === undefined || isNaN(Number(val))) return '0';
+    return Number(val).toLocaleString('en-IN', {
+      maximumFractionDigits: maxDecimals,
+    });
+  };
+
+  const formatDate = (val: string | Date | null | undefined) => {
+    if (!val) return '—';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return '—';
+    }
+  };
+
+  const formatDateTime = (val: string | Date | null | undefined) => {
+    if (!val) return '—';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return '—';
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 pb-16">
       {/* 1. Header & Quick Action Bar */}
@@ -464,7 +511,7 @@ export function CustomerDashboard({
                   Sanctioned Principal
                 </p>
                 <p className="text-lg font-black text-emerald-950 dark:text-emerald-200">
-                  ₹{(loanTerms?.amount || 0).toLocaleString('en-IN')}
+                  ₹{formatCurrency(loanTerms?.amount)}
                 </p>
               </div>
             </div>
@@ -485,7 +532,7 @@ export function CustomerDashboard({
                 <div className="text-right">
                   <p className="text-[11px] text-slate-500">Net Amount</p>
                   <p className="font-mono text-sm font-extrabold text-emerald-600">
-                    ₹{(loanTerms?.netDisbursement || 0).toLocaleString('en-IN')}
+                    ₹{formatCurrency(loanTerms?.netDisbursement)}
                   </p>
                 </div>
               </div>
@@ -522,7 +569,7 @@ export function CustomerDashboard({
                   Total Disbursed
                 </p>
                 <p className="text-lg font-black text-emerald-300">
-                  ₹{(loanTerms?.netDisbursement || loanTerms?.amount || 0).toLocaleString('en-IN')}
+                  ₹{formatCurrency(loanTerms?.netDisbursement || loanTerms?.amount)}
                 </p>
               </div>
             </div>
@@ -536,7 +583,7 @@ export function CustomerDashboard({
               <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-3">
                 <p className="text-[10px] text-slate-400">Monthly EMI</p>
                 <p className="text-sm font-extrabold text-white">
-                  ₹{(loanTerms?.emi || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                  ₹{formatCurrency(loanTerms?.emi, 2)}
                 </p>
                 <p className="text-[10px] text-emerald-400">Due on 5th each mo</p>
               </div>
@@ -546,7 +593,7 @@ export function CustomerDashboard({
                 <p className="text-sm font-extrabold text-white">
                   {loanTerms?.tenureMonths || 0} Months
                 </p>
-                <p className="text-[10px] text-slate-400">Fixed Rate: {loanTerms?.interestRate}%</p>
+                <p className="text-[10px] text-slate-400">Fixed Rate: {formatPercent(loanTerms?.interestRate)}%</p>
               </div>
 
               <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-3">
@@ -707,59 +754,59 @@ export function CustomerDashboard({
               <CardContent className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 pt-0">
                 {loanTerms ? (
                   <>
-                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Sanctioned Principal:</span>
                       <span className="font-bold text-slate-900 dark:text-white">
-                        ₹{loanTerms.amount.toLocaleString('en-IN')}
+                        ₹{formatCurrency(loanTerms.amount)}
                       </span>
                     </div>
 
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Selected Tenure:</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {loanTerms.tenureMonths} Months
+                        {loanTerms.tenureMonths || 0} Months
                       </span>
                     </div>
 
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Interest Rate:</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {loanTerms.interestRate}% p.a.
+                        {formatPercent(loanTerms.interestRate)}% p.a.
                       </span>
                     </div>
 
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Monthly EMI:</span>
                       <span className="font-extrabold text-emerald-600">
-                        ₹{loanTerms.emi.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        ₹{formatCurrency(loanTerms.emi, 2)}
                       </span>
                     </div>
 
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Total Deductions (Fee + GST):</span>
                       <span className="font-semibold text-rose-600">
-                        - ₹{loanTerms.totalDeductions.toLocaleString('en-IN')}
+                        - ₹{formatCurrency(loanTerms.totalDeductions)}
                       </span>
                     </div>
 
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 bg-emerald-50/50 dark:bg-emerald-950/20 px-2 rounded-lg">
                       <span className="font-bold text-slate-700 dark:text-slate-300">Net Disbursement:</span>
                       <span className="font-extrabold text-emerald-600">
-                        ₹{loanTerms.netDisbursement.toLocaleString('en-IN')}
+                        ₹{formatCurrency(loanTerms.netDisbursement)}
                       </span>
                     </div>
 
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Total Repayment:</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        ₹{loanTerms.totalRepayment.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        ₹{formatCurrency(loanTerms.totalRepayment, 2)}
                       </span>
                     </div>
 
                     <div className="flex justify-between py-1">
                       <span className="text-slate-500">Effective IRR / APR:</span>
                       <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                        {loanTerms.irr}%
+                        {formatPercent(loanTerms.irr)}%
                       </span>
                     </div>
                   </>
@@ -821,12 +868,7 @@ export function CustomerDashboard({
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Date of Birth & Gender:</span>
                       <span className="font-medium text-slate-800 dark:text-slate-200">
-                        {new Date(kycDetails.dob).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}{' '}
-                        • {kycDetails.gender}
+                        {formatDate(kycDetails.dob)} • {kycDetails.gender}
                       </span>
                     </div>
 
@@ -882,7 +924,7 @@ export function CustomerDashboard({
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Monthly Net Income:</span>
                       <span className="font-bold text-slate-900 dark:text-white">
-                        ₹{eligibilityCheck.income.toLocaleString('en-IN')}
+                        ₹{formatCurrency(eligibilityCheck.income)}
                       </span>
                     </div>
 
@@ -896,7 +938,7 @@ export function CustomerDashboard({
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Existing Monthly Debts:</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        ₹{eligibilityCheck.existingDebts.toLocaleString('en-IN')}
+                        ₹{formatCurrency(eligibilityCheck.existingDebts)}
                       </span>
                     </div>
 
@@ -910,14 +952,14 @@ export function CustomerDashboard({
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Debt-to-Income (DTI):</span>
                       <span className="font-mono font-bold text-emerald-600">
-                        {eligibilityCheck.dtiRatio || 25}% (Optimal &lt; 50%)
+                        {formatPercent(eligibilityCheck.dtiRatio || 25, 0)}% (Optimal &lt; 50%)
                       </span>
                     </div>
 
                     <div className="flex justify-between py-1">
                       <span className="text-slate-500">Max Sanction Limit:</span>
                       <span className="font-bold text-indigo-600">
-                        ₹{(eligibilityCheck.maxEligibleAmount || 500000).toLocaleString('en-IN')}
+                        ₹{formatCurrency(eligibilityCheck.maxEligibleAmount || 500000)}
                       </span>
                     </div>
                   </>
@@ -958,7 +1000,7 @@ export function CustomerDashboard({
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">Bank Name & Branch:</span>
                       <span className="font-bold text-slate-900 dark:text-white">
-                        {bankAccount.bankName} - {bankAccount.branchName}
+                        {bankAccount.bankName} - {bankAccount.branchName || 'Main Branch'}
                       </span>
                     </div>
 
@@ -1042,7 +1084,7 @@ export function CustomerDashboard({
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                       <span className="text-slate-500">E-Signature Timestamp:</span>
                       <span className="font-mono text-slate-700 dark:text-slate-300">
-                        {new Date(declaration.acceptedAt).toLocaleString('en-IN')}
+                        {formatDateTime(declaration.acceptedAt)}
                       </span>
                     </div>
 
@@ -1112,7 +1154,7 @@ export function CustomerDashboard({
                         Facial Liveness Verified
                       </p>
                       <p className="text-[11px] text-slate-500">
-                        Uploaded on: {new Date(selfie.createdAt).toLocaleString('en-IN')}
+                        Uploaded on: {formatDateTime(selfie.createdAt)}
                       </p>
                       <p className="text-[11px] text-slate-500">
                         Status:{' '}
@@ -1122,7 +1164,7 @@ export function CustomerDashboard({
                       </p>
                       {selfie.reviewedAt && (
                         <p className="text-[10px] text-emerald-600 font-medium">
-                          Reviewed on: {new Date(selfie.reviewedAt).toLocaleString('en-IN')}
+                          Reviewed on: {formatDateTime(selfie.reviewedAt)}
                         </p>
                       )}
                     </div>
