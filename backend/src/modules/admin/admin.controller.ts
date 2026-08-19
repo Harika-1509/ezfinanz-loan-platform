@@ -45,6 +45,118 @@ export class AdminController {
     }
   }
 
+  public async reviewSelfie(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { action, reason } = req.body;
+      const adminUserId = req.user?.userId;
+
+      if (!id) {
+        throw AppError.badRequest('Application ID is required.');
+      }
+      if (!adminUserId) {
+        throw AppError.unauthorized('Admin authentication required.');
+      }
+
+      const result = await adminService.reviewSelfie(
+        id,
+        adminUserId,
+        action,
+        reason
+      );
+      sendSuccess(res, result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async approveSelfie(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const adminUserId = req.user?.userId;
+
+      if (!id) {
+        throw AppError.badRequest('Application ID is required.');
+      }
+      if (!adminUserId) {
+        throw AppError.unauthorized('Admin authentication required.');
+      }
+
+      const result = await adminService.reviewSelfie(
+        id,
+        adminUserId,
+        'APPROVE'
+      );
+      sendSuccess(res, result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async rejectSelfie(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      const adminUserId = req.user?.userId;
+
+      if (!id) {
+        throw AppError.badRequest('Application ID is required.');
+      }
+      if (!adminUserId) {
+        throw AppError.unauthorized('Admin authentication required.');
+      }
+
+      const result = await adminService.reviewSelfie(
+        id,
+        adminUserId,
+        'REJECT',
+        reason
+      );
+      sendSuccess(res, result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async disburseLoan(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const adminUserId = req.user?.userId;
+
+      if (!id) {
+        throw AppError.badRequest('Application ID is required.');
+      }
+      if (!adminUserId) {
+        throw AppError.unauthorized('Admin authentication required.');
+      }
+
+      const result = await adminService.disburseLoan(
+        id,
+        adminUserId,
+        req.body
+      );
+      sendSuccess(res, result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public async getDashboardStats(
     _req: Request,
     res: Response,

@@ -77,28 +77,27 @@ export class AuthService {
     // 3. Hash password with bcrypt (Cost Factor: 12 >= 10)
     const passwordHash = await bcrypt.hash(input.password, 12);
 
-    // 4. Create User and linked Application inside a single atomic transaction
-    const { user, application } = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          email,
-          phone: input.phone || null,
-          passwordHash,
-          role: Role.CUSTOMER,
-          emailVerified: false,
-          phoneVerified: false,
+    // 4. Create User and linked Application using atomic nested create
+    const user = await prisma.user.create({
+      data: {
+        email,
+        phone: input.phone || null,
+        passwordHash,
+        role: Role.CUSTOMER,
+        emailVerified: false,
+        phoneVerified: false,
+        applications: {
+          create: {
+            stage: ApplicationStage.SIGNUP_COMPLETED,
+          },
         },
-      });
-
-      const newApplication = await tx.application.create({
-        data: {
-          userId: newUser.id,
-          stage: ApplicationStage.SIGNUP_COMPLETED,
-        },
-      });
-
-      return { user: newUser, application: newApplication };
+      },
+      include: {
+        applications: true,
+      },
     });
+
+    const application = user.applications[0];
 
     // 5. Generate JWT tokens
     const accessToken = generateAccessToken({
@@ -209,30 +208,27 @@ export class AuthService {
 
     if (!user) {
       // First-time OAuth login: Auto-create User (emailVerified = true) and Application
-      const result = await prisma.$transaction(async (tx) => {
-        const newUser = await tx.user.create({
-          data: {
-            email,
-            emailVerified: true, // Google verifies user email
-            phoneVerified: false,
-            oauthProvider: 'google',
-            oauthId: googleId,
-            role: Role.CUSTOMER,
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          emailVerified: true, // Google verifies user email
+          phoneVerified: false,
+          oauthProvider: 'google',
+          oauthId: googleId,
+          role: Role.CUSTOMER,
+          applications: {
+            create: {
+              stage: ApplicationStage.SIGNUP_COMPLETED,
+            },
           },
-        });
-
-        const newApp = await tx.application.create({
-          data: {
-            userId: newUser.id,
-            stage: ApplicationStage.SIGNUP_COMPLETED,
-          },
-        });
-
-        return { user: newUser, application: newApp };
+        },
+        include: {
+          applications: true,
+        },
       });
 
-      user = result.user;
-      application = result.application;
+      user = newUser;
+      application = newUser.applications[0];
     } else {
       // Returning user: Ensure oauth link is updated and email is marked verified
       const updateData: { oauthProvider?: string; oauthId?: string; emailVerified?: boolean } = {};
