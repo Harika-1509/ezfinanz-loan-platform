@@ -16,6 +16,8 @@ import {
   ArrowRight,
   Sparkles,
   Loader2,
+  RotateCcw,
+  Check,
 } from 'lucide-react';
 import { useAuth, ApplicationStage } from '../../contexts/auth-context';
 import { apiClient } from '../../lib/api-client';
@@ -24,6 +26,9 @@ import { LoanStepper } from '../../components/loan/loan-stepper';
 import { KycForm } from '../../components/loan/kyc-form';
 import { EligibilityForm } from '../../components/loan/eligibility-form';
 import { LoanTermsCalculator } from '../../components/loan/loan-terms-calculator';
+import { BankAccountForm } from '../../components/loan/bank-account-form';
+import { DeclarationForm } from '../../components/loan/declaration-form';
+import { SelfieCapture } from '../../components/loan/selfie-capture';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -41,18 +46,19 @@ export default function ApplyPage() {
   const syncStage = useCallback(async () => {
     try {
       const res = await apiClient.get<{
-        id: string;
-        stage: ApplicationStage;
+        user: any;
+        application: { id: string; stage: ApplicationStage };
       }>('/auth/me');
 
-      if (res.data?.stage) {
-        setCurrentStage(res.data.stage);
-        updateApplicationStage(res.data.stage);
+      if (res.data?.application?.stage) {
+        const s = res.data.application.stage;
+        setCurrentStage(s);
+        updateApplicationStage(s);
 
         // If unverified 2FA, redirect to /verify
         if (
-          res.data.stage === 'SIGNUP_COMPLETED' ||
-          res.data.stage === 'VERIFICATION_PENDING'
+          s === 'SIGNUP_COMPLETED' ||
+          s === 'VERIFICATION_PENDING'
         ) {
           router.push('/verify');
         }
@@ -104,7 +110,11 @@ export default function ApplyPage() {
               Personal Loan Application
             </h1>
             <p className="text-xs text-slate-500">
-              Application ID: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{application?.id || 'APP-ACTIVE'}</span> • Registered to {user?.email || user?.phone}
+              Application ID:{' '}
+              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+                {application?.id || 'APP-ACTIVE'}
+              </span>{' '}
+              • Registered to {user?.email || user?.phone}
             </p>
           </div>
 
@@ -138,8 +148,8 @@ export default function ApplyPage() {
             />
           )}
 
-          {/* Stage 3 & 4: Loan Terms & Live EMI Calculation (Step 4 of 8) */}
-          {(currentStage === 'ELIGIBILITY_CHECKED' || currentStage === 'EMI_SELECTED') && (
+          {/* Stage 3: Loan Terms & Live EMI Selection (Step 4 of 8) */}
+          {currentStage === 'ELIGIBILITY_CHECKED' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Button
@@ -161,42 +171,110 @@ export default function ApplyPage() {
             </div>
           )}
 
-          {/* Stages 5+: Bank, Declaration, Selfie, Disbursal */}
-          {![
-            'SIGNUP_COMPLETED',
-            'VERIFICATION_PENDING',
-            'KYC_PENDING',
-            'KYC_SUBMITTED',
-            'ELIGIBILITY_CHECKED',
-            'EMI_SELECTED',
-          ].includes(currentStage) && (
-            <Card className="border-slate-200/80 shadow-glass">
+          {/* Stage 4: Disbursement Bank Account Linking (Step 5 of 8) */}
+          {currentStage === 'EMI_SELECTED' && (
+            <BankAccountForm
+              onSuccess={() => {
+                setCurrentStage('BANK_ADDED');
+                updateApplicationStage('BANK_ADDED');
+              }}
+              onBack={() => {
+                setCurrentStage('ELIGIBILITY_CHECKED');
+              }}
+            />
+          )}
+
+          {/* Stage 5: Borrower Legal Undertaking & Declaration (Step 6 of 8) */}
+          {currentStage === 'BANK_ADDED' && (
+            <DeclarationForm
+              onSuccess={() => {
+                setCurrentStage('DECLARATION_CONFIRMED');
+                updateApplicationStage('DECLARATION_CONFIRMED');
+              }}
+              onBack={() => {
+                setCurrentStage('EMI_SELECTED');
+              }}
+            />
+          )}
+
+          {/* Stage 6 & 7: Biometric Selfie Verification & Admin Review (Step 7 of 8) */}
+          {(currentStage === 'DECLARATION_CONFIRMED' ||
+            currentStage === 'SELFIE_PENDING' ||
+            currentStage === 'WAITING_ADMIN_REVIEW') && (
+            <SelfieCapture
+              onSuccess={() => {
+                setCurrentStage('WAITING_ADMIN_REVIEW');
+                updateApplicationStage('WAITING_ADMIN_REVIEW');
+              }}
+              onBack={
+                currentStage !== 'WAITING_ADMIN_REVIEW'
+                  ? () => setCurrentStage('BANK_ADDED')
+                  : undefined
+              }
+            />
+          )}
+
+          {/* Stage 8: Application Approved / Ready for Disbursement */}
+          {currentStage === 'APPROVED' && (
+            <Card className="border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/50 shadow-glass dark:border-emerald-900/50 dark:from-slate-900 dark:to-emerald-950/30">
               <CardHeader>
-                <div className="flex items-center space-x-2 text-emerald-600">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <CardTitle className="text-base font-bold">
-                    Current Stage: {currentStage}
+                <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-6 w-6" />
+                  <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
+                    Application Approved! Ready for Disbursement
                   </CardTitle>
                 </div>
-                <CardDescription className="text-xs">
-                  Your application has progressed to the subsequent phase.
+                <CardDescription className="text-xs text-slate-600 dark:text-slate-300">
+                  Congratulations! All identity, underwriting, and biometric verifications have passed.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
-                <p>
-                  You have successfully completed KYC and Underwriting Eligibility!
-                </p>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    onClick={() => {
-                      // Allow re-visiting eligibility if desired
-                      setCurrentStage('ELIGIBILITY_CHECKED');
-                    }}
-                    variant="outline"
-                    size="sm"
-                  >
-                    View Eligibility Assessment
-                  </Button>
+              <CardContent className="space-y-4 text-xs text-slate-600 dark:text-slate-300">
+                <div className="rounded-2xl border border-emerald-200 bg-white/90 p-4 dark:border-emerald-900/40 dark:bg-slate-850">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-500">Disbursement Status</span>
+                    <Badge className="bg-emerald-600 text-white text-[10px]">
+                      Processing NEFT Queue
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-slate-600 dark:text-slate-400">
+                    Your sanctioned funds will be electronically transferred to your validated bank account shortly. You will receive an SMS and email notification once credited.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Stage 9: Disbursed Celebration Dashboard */}
+          {currentStage === 'DISBURSED' && (
+            <Card className="border-emerald-500/40 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 text-white shadow-xl">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-emerald-400">
+                    <Sparkles className="h-6 w-6" />
+                    <CardTitle className="text-xl font-black text-white">
+                      Loan Disbursed Successfully!
+                    </CardTitle>
+                  </div>
+                  <Badge className="bg-emerald-500 text-slate-950 font-bold text-[10px]">
+                    ACTIVE LOAN
+                  </Badge>
+                </div>
+                <CardDescription className="text-xs text-slate-300">
+                  Funds have been successfully credited to your bank account.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-xs text-slate-300">
+                <div className="rounded-2xl border border-slate-800 bg-slate-800/60 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span>Active Loan ID</span>
+                    <span className="font-mono font-bold text-white">
+                      {application?.id || 'EZF-LOAN-001'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Repayment Status</span>
+                    <span className="text-emerald-400 font-bold">Standard Monthly Autopay</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>

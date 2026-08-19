@@ -15,8 +15,11 @@ export class SelfieController {
       }
 
       const base64Data =
+        req.body?.base64Data ||
+        req.body?.base64Image ||
         req.body?.imageBase64 ||
         req.body?.selfieBase64 ||
+        req.body?.selfie ||
         req.body?.photo ||
         req.body?.image;
 

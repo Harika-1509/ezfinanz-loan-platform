@@ -12,7 +12,9 @@ router.post(
   '/submit',
   stageGuard(
     ApplicationStage.DECLARATION_CONFIRMED,
-    ApplicationStage.SELFIE_PENDING
+    ApplicationStage.SELFIE_PENDING,
+    ApplicationStage.WAITING_ADMIN_REVIEW,
+    ApplicationStage.REJECTED
   ),
   upload.single('selfie') as any,
   selfieController.submitSelfie

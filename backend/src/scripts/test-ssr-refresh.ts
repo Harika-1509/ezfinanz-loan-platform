@@ -8,6 +8,9 @@ async function testAllRoutes() {
     '/apply/kyc',
     '/apply/eligibility',
     '/apply/loan-terms',
+    '/apply/bank-account',
+    '/apply/declaration',
+    '/apply/selfie',
     '/auth/callback',
   ];
 

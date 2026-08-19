@@ -11,7 +11,7 @@ router.use(authGuard);
 
 router.post(
   '/submit',
-  stageGuard(ApplicationStage.EMI_SELECTED),
+  stageGuard(ApplicationStage.EMI_SELECTED, ApplicationStage.BANK_ADDED),
   validate(bankAccountSchema),
   bankAccountController.submitBankAccount
 );

@@ -13,7 +13,10 @@ router.get('/text', declarationController.getDeclarationText);
 
 router.post(
   '/accept',
-  stageGuard(ApplicationStage.BANK_ADDED),
+  stageGuard(
+    ApplicationStage.BANK_ADDED,
+    ApplicationStage.DECLARATION_CONFIRMED
+  ),
   validate(declarationAcceptSchema),
   declarationController.acceptDeclaration
 );
