@@ -5,8 +5,9 @@ import { AppError } from '../utils/app-error';
 // Augment Express User interface so Passport and Express both use TokenPayload
 declare global {
   namespace Express {
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    interface User extends TokenPayload {}
+    interface User extends TokenPayload {
+      _extra?: never;
+    }
   }
 }
 
