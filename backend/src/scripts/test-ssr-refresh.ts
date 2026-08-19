@@ -12,6 +12,8 @@ async function testAllRoutes() {
     '/apply/bank-account',
     '/apply/declaration',
     '/apply/selfie',
+    '/admin',
+    '/admin/applications/test-app-id',
     '/auth/callback',
   ];
 

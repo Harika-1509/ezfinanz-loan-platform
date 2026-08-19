@@ -147,26 +147,38 @@ export class AdminService {
     if (searchQuery) {
       where.OR = [
         {
+          id: {
+            contains: searchQuery,
+            mode: 'insensitive',
+          },
+        },
+        {
           user: {
-            email: {
-              contains: searchQuery,
-              mode: 'insensitive',
+            is: {
+              email: {
+                contains: searchQuery,
+                mode: 'insensitive',
+              },
             },
           },
         },
         {
           user: {
-            phone: {
-              contains: searchQuery,
-              mode: 'insensitive',
+            is: {
+              phone: {
+                contains: searchQuery,
+                mode: 'insensitive',
+              },
             },
           },
         },
         {
           kycDetails: {
-            fullName: {
-              contains: searchQuery,
-              mode: 'insensitive',
+            is: {
+              fullName: {
+                contains: searchQuery,
+                mode: 'insensitive',
+              },
             },
           },
         },
@@ -396,14 +408,15 @@ export class AdminService {
       throw AppError.notFound('Loan application not found.');
     }
 
-    if (!app.selfie) {
+    const isApproved = action === 'APPROVE';
+
+    if (isApproved && !app.selfie) {
       throw AppError.badRequest(
-        'No verification selfie has been submitted for this application.'
+        'Cannot approve application without a submitted verification selfie.'
       );
     }
 
     const reviewedAt = new Date();
-    const isApproved = action === 'APPROVE';
     const targetStatus = isApproved
       ? AdminReviewStatus.APPROVED
       : AdminReviewStatus.REJECTED;
@@ -413,17 +426,20 @@ export class AdminService {
 
     const { updatedApp, updatedSelfie } = await prisma.$transaction(
       async (tx) => {
-        const selfie = await tx.selfie.update({
-          where: { id: app.selfie!.id },
-          data: {
-            adminStatus: targetStatus,
-            reviewedBy: adminUserId,
-            reviewedAt,
-            rejectReason: isApproved
-              ? null
-              : reason || 'Document or photo verification failed',
-          },
-        });
+        let selfie = null;
+        if (app.selfie) {
+          selfie = await tx.selfie.update({
+            where: { id: app.selfie.id },
+            data: {
+              adminStatus: targetStatus,
+              reviewedBy: adminUserId,
+              reviewedAt,
+              rejectReason: isApproved
+                ? null
+                : reason || 'Document or photo verification failed',
+            },
+          });
+        }
 
         const application = await tx.application.update({
           where: { id: applicationId },
@@ -473,13 +489,15 @@ export class AdminService {
         id: updatedApp.id,
         stage: updatedApp.stage,
       },
-      selfie: {
-        id: updatedSelfie.id,
-        adminStatus: updatedSelfie.adminStatus,
-        reviewedBy: updatedSelfie.reviewedBy,
-        reviewedAt: updatedSelfie.reviewedAt,
-        rejectReason: updatedSelfie.rejectReason,
-      },
+      selfie: updatedSelfie
+        ? {
+            id: updatedSelfie.id,
+            adminStatus: updatedSelfie.adminStatus,
+            reviewedBy: updatedSelfie.reviewedBy,
+            reviewedAt: updatedSelfie.reviewedAt,
+            rejectReason: updatedSelfie.rejectReason,
+          }
+        : null,
       message,
     };
   }
@@ -584,12 +602,17 @@ export class AdminService {
   public async getDashboardStats(): Promise<{
     totalApplications: number;
     pendingReviewCount: number;
+    waitingReview: number;
     approvedCount: number;
+    approved: number;
     rejectedCount: number;
+    rejected: number;
     disbursedCount: number;
+    disbursed: number;
+    totalDisbursedAmount: number;
     stageBreakdown: Record<string, number>;
   }> {
-    const [totalApplications, pendingReviewCount, stageGroups] =
+    const [totalApplications, pendingReviewCount, stageGroups, disbursedLoans] =
       await Promise.all([
         prisma.application.count(),
         prisma.application.count({
@@ -599,6 +622,17 @@ export class AdminService {
           by: ['stage'],
           _count: { stage: true },
         }),
+        prisma.loanTerms.aggregate({
+          _sum: {
+            netDisbursement: true,
+            amount: true,
+          },
+          where: {
+            application: {
+              stage: ApplicationStage.DISBURSED,
+            },
+          },
+        }),
       ]);
 
     const stageBreakdown: Record<string, number> = {};
@@ -606,12 +640,21 @@ export class AdminService {
       stageBreakdown[group.stage] = group._count.stage;
     }
 
+    const totalDisbursedAmount = Number(
+      disbursedLoans._sum.netDisbursement || disbursedLoans._sum.amount || 0
+    );
+
     return {
       totalApplications,
       pendingReviewCount,
+      waitingReview: pendingReviewCount,
       approvedCount: stageBreakdown[ApplicationStage.APPROVED] || 0,
+      approved: stageBreakdown[ApplicationStage.APPROVED] || 0,
       rejectedCount: stageBreakdown[ApplicationStage.REJECTED] || 0,
+      rejected: stageBreakdown[ApplicationStage.REJECTED] || 0,
       disbursedCount: stageBreakdown[ApplicationStage.DISBURSED] || 0,
+      disbursed: stageBreakdown[ApplicationStage.DISBURSED] || 0,
+      totalDisbursedAmount,
       stageBreakdown,
     };
   }
