@@ -66,8 +66,8 @@ export class EligibilityService {
     });
 
     // 4. Atomically persist eligibility check and advance stage to ELIGIBILITY_CHECKED
-    const { savedCheck, updatedApp } = await prisma.$transaction(async (tx) => {
-      const check = await tx.eligibilityCheck.upsert({
+    const [savedCheck, updatedApp] = await prisma.$transaction([
+      prisma.eligibilityCheck.upsert({
         where: { applicationId: application.id },
         create: {
           applicationId: application.id,
@@ -92,15 +92,12 @@ export class EligibilityService {
           result: calculation.result,
           maxApprovedAmount: calculation.maxApprovedAmount,
         },
-      });
-
-      const app = await tx.application.update({
+      }),
+      prisma.application.update({
         where: { id: application.id },
         data: { stage: ApplicationStage.ELIGIBILITY_CHECKED },
-      });
-
-      return { savedCheck: check, updatedApp: app };
-    });
+      }),
+    ]);
 
     return {
       eligibilityCheck: savedCheck,

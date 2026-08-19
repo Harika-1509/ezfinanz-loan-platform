@@ -95,49 +95,44 @@ export class LoanTermsService {
       tenureMonths: input.tenureMonths,
     });
 
-    const { savedTerms, updatedApp } = await prisma.$transaction(
-      async (tx) => {
-        const terms = await tx.loanTerms.upsert({
-          where: { applicationId: application.id },
-          create: {
-            applicationId: application.id,
-            amount: breakdown.amount,
-            tenureMonths: breakdown.tenureMonths,
-            interestRate: breakdown.interestRate,
-            processingFee: breakdown.processingFee,
-            gst: breakdown.gst,
-            otherCharges: breakdown.otherCharges,
-            emi: breakdown.emi,
-            totalInterest: breakdown.totalInterest,
-            totalRepayment: breakdown.totalRepayment,
-            totalCharges: breakdown.totalCharges,
-            netDisbursement: breakdown.netDisbursement,
-            irr: breakdown.irr,
-          },
-          update: {
-            amount: breakdown.amount,
-            tenureMonths: breakdown.tenureMonths,
-            interestRate: breakdown.interestRate,
-            processingFee: breakdown.processingFee,
-            gst: breakdown.gst,
-            otherCharges: breakdown.otherCharges,
-            emi: breakdown.emi,
-            totalInterest: breakdown.totalInterest,
-            totalRepayment: breakdown.totalRepayment,
-            totalCharges: breakdown.totalCharges,
-            netDisbursement: breakdown.netDisbursement,
-            irr: breakdown.irr,
-          },
-        });
-
-        const app = await tx.application.update({
-          where: { id: application.id },
-          data: { stage: ApplicationStage.EMI_SELECTED },
-        });
-
-        return { savedTerms: terms, updatedApp: app };
-      }
-    );
+    const [savedTerms, updatedApp] = await prisma.$transaction([
+      prisma.loanTerms.upsert({
+        where: { applicationId: application.id },
+        create: {
+          applicationId: application.id,
+          amount: breakdown.amount,
+          tenureMonths: breakdown.tenureMonths,
+          interestRate: breakdown.interestRate,
+          processingFee: breakdown.processingFee,
+          gst: breakdown.gst,
+          otherCharges: breakdown.otherCharges,
+          emi: breakdown.emi,
+          totalInterest: breakdown.totalInterest,
+          totalRepayment: breakdown.totalRepayment,
+          totalCharges: breakdown.totalCharges,
+          netDisbursement: breakdown.netDisbursement,
+          irr: breakdown.irr,
+        },
+        update: {
+          amount: breakdown.amount,
+          tenureMonths: breakdown.tenureMonths,
+          interestRate: breakdown.interestRate,
+          processingFee: breakdown.processingFee,
+          gst: breakdown.gst,
+          otherCharges: breakdown.otherCharges,
+          emi: breakdown.emi,
+          totalInterest: breakdown.totalInterest,
+          totalRepayment: breakdown.totalRepayment,
+          totalCharges: breakdown.totalCharges,
+          netDisbursement: breakdown.netDisbursement,
+          irr: breakdown.irr,
+        },
+      }),
+      prisma.application.update({
+        where: { id: application.id },
+        data: { stage: ApplicationStage.EMI_SELECTED },
+      }),
+    ]);
 
     return {
       loanTerms: savedTerms,

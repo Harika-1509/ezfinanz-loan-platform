@@ -23,6 +23,7 @@ import { CustomerRoute } from '../../components/auth/route-guards';
 import { LoanStepper } from '../../components/loan/loan-stepper';
 import { KycForm } from '../../components/loan/kyc-form';
 import { EligibilityForm } from '../../components/loan/eligibility-form';
+import { LoanTermsCalculator } from '../../components/loan/loan-terms-calculator';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -127,8 +128,8 @@ export default function ApplyPage() {
             />
           )}
 
-          {/* Stage 2 & 3: Eligibility Underwriting (Step 3 of 8) */}
-          {(currentStage === 'KYC_SUBMITTED' || currentStage === 'ELIGIBILITY_CHECKED') && (
+          {/* Stage 2: Eligibility Underwriting (Step 3 of 8) */}
+          {currentStage === 'KYC_SUBMITTED' && (
             <EligibilityForm
               onSuccess={() => {
                 setCurrentStage('ELIGIBILITY_CHECKED');
@@ -137,13 +138,37 @@ export default function ApplyPage() {
             />
           )}
 
-          {/* Stages 4+: Coming in next chunks (EMI, Bank, Declaration, Selfie, Disbursal) */}
+          {/* Stage 3 & 4: Loan Terms & Live EMI Calculation (Step 4 of 8) */}
+          {(currentStage === 'ELIGIBILITY_CHECKED' || currentStage === 'EMI_SELECTED') && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentStage('KYC_SUBMITTED')}
+                  className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                >
+                  ← Back to Eligibility Assessment
+                </Button>
+              </div>
+
+              <LoanTermsCalculator
+                onSuccess={() => {
+                  setCurrentStage('EMI_SELECTED');
+                  updateApplicationStage('EMI_SELECTED');
+                }}
+              />
+            </div>
+          )}
+
+          {/* Stages 5+: Bank, Declaration, Selfie, Disbursal */}
           {![
             'SIGNUP_COMPLETED',
             'VERIFICATION_PENDING',
             'KYC_PENDING',
             'KYC_SUBMITTED',
             'ELIGIBILITY_CHECKED',
+            'EMI_SELECTED',
           ].includes(currentStage) && (
             <Card className="border-slate-200/80 shadow-glass">
               <CardHeader>
