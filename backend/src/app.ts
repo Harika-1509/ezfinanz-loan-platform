@@ -13,6 +13,7 @@ import { eligibilityRoutes } from './modules/eligibility';
 import { loanTermsRoutes } from './modules/loan-terms';
 import { bankAccountRoutes } from './modules/bank-account';
 import { declarationRoutes } from './modules/declaration';
+import { selfieRoutes } from './modules/selfie';
 import { requestLogger } from './shared/middleware/logger.middleware';
 import { errorHandler, notFoundHandler } from './shared/middleware/error.middleware';
 import { authLimiter } from './shared/middleware/rate-limit.middleware';
@@ -70,6 +71,7 @@ export const createApp = (): Application => {
           apiV1LoanTerms: `${config.API_PREFIX}/loan-terms`,
           apiV1BankAccount: `${config.API_PREFIX}/bank-account`,
           apiV1Declaration: `${config.API_PREFIX}/declaration`,
+          apiV1Selfie: `${config.API_PREFIX}/selfie`,
           uploads: '/uploads',
         },
       },
@@ -87,6 +89,7 @@ export const createApp = (): Application => {
   apiV1Router.use('/loan-terms', loanTermsRoutes);
   apiV1Router.use('/bank-account', bankAccountRoutes);
   apiV1Router.use('/declaration', declarationRoutes);
+  apiV1Router.use('/selfie', selfieRoutes);
 
   app.use(config.API_PREFIX, apiV1Router);
 
