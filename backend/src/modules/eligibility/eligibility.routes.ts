@@ -11,7 +11,7 @@ router.use(authGuard);
 
 router.post(
   '/check',
-  stageGuard(ApplicationStage.KYC_SUBMITTED),
+  stageGuard(ApplicationStage.KYC_SUBMITTED, ApplicationStage.ELIGIBILITY_CHECKED),
   validate(eligibilityCheckSchema),
   eligibilityController.checkEligibility
 );

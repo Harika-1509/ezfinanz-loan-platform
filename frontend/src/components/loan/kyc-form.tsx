@@ -1,0 +1,377 @@
+'use client';
+
+import React, { useState } from 'react';
+import { z } from 'zod';
+import {
+  FileText,
+  User,
+  Calendar,
+  MapPin,
+  CreditCard,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  ArrowRight,
+  ShieldCheck,
+} from 'lucide-react';
+import { useAuth } from '../../contexts/auth-context';
+import { apiClient, ApiError } from '../../lib/api-client';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { FileUpload } from '../ui/file-upload';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
+
+// Zod Schema with Age >= 18 validation and Gender
+const kycSchema = z.object({
+  fullName: z
+    .string()
+    .trim()
+    .min(2, 'Full Name must be at least 2 characters')
+    .max(100, 'Full Name cannot exceed 100 characters'),
+  dob: z
+    .string()
+    .min(1, 'Date of Birth is required')
+    .refine((dobStr) => {
+      const birthDate = new Date(dobStr);
+      if (isNaN(birthDate.getTime())) return false;
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age >= 18;
+    }, 'Applicant must be at least 18 years of age per RBI regulations'),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
+  address: z
+    .string()
+    .trim()
+    .min(5, 'Residential address must be at least 5 characters')
+    .max(500, 'Address cannot exceed 500 characters'),
+  idType: z.enum(['PAN', 'AADHAAR']),
+  idNumber: z.string().trim().min(1, 'ID Document number is required'),
+}).superRefine((data, ctx) => {
+  if (data.idType === 'PAN') {
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if (!panRegex.test(data.idNumber.toUpperCase())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Invalid PAN card format. Expected 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)',
+        path: ['idNumber'],
+      });
+    }
+  } else if (data.idType === 'AADHAAR') {
+    const aadhaarRegex = /^[2-9]{1}[0-9]{11}$/;
+    if (!aadhaarRegex.test(data.idNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Invalid Aadhaar format. Expected 12 digits (starts with 2-9)',
+        path: ['idNumber'],
+      });
+    }
+  }
+});
+
+export interface KycFormProps {
+  onSuccess?: () => void;
+}
+
+export function KycForm({ onSuccess }: KycFormProps) {
+  const { updateApplicationStage } = useAuth();
+
+  const [fullName, setFullName] = useState('');
+  const [dob, setDob] = useState('');
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER'>('MALE');
+  const [address, setAddress] = useState('');
+  const [idType, setIdType] = useState<'PAN' | 'AADHAAR'>('PAN');
+  const [idNumber, setIdNumber] = useState('');
+
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const handleIdTypeChange = (newType: 'PAN' | 'AADHAAR') => {
+    setIdType(newType);
+    setIdNumber('');
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.idNumber;
+      return next;
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setFieldErrors({});
+
+    const validation = kycSchema.safeParse({
+      fullName,
+      dob,
+      gender,
+      address,
+      idType,
+      idNumber: idNumber.toUpperCase(),
+    });
+
+    if (!validation.success) {
+      const errors: Record<string, string> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) errors[err.path[0].toString()] = err.message;
+      });
+      setFieldErrors(errors);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (documentFile) {
+        // Multipart submission
+        const formData = new FormData();
+        formData.append('fullName', fullName);
+        formData.append('dob', dob);
+        formData.append('gender', gender);
+        formData.append('address', address);
+        formData.append('idType', idType);
+        formData.append('idNumber', idNumber.toUpperCase());
+        formData.append('file', documentFile);
+
+        await apiClient.upload('/kyc/submit', formData);
+      } else {
+        // JSON payload
+        await apiClient.post('/kyc/submit', {
+          fullName,
+          dob,
+          gender,
+          address,
+          idType,
+          idNumber: idNumber.toUpperCase(),
+        });
+      }
+
+      updateApplicationStage('KYC_SUBMITTED');
+      setSuccessMessage('KYC documents submitted successfully! Transitioning to eligibility underwriting...');
+
+      setTimeout(() => {
+        if (onSuccess) onSuccess();
+      }, 1000);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage('Failed to submit KYC details. Please check your information.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Card className="border-slate-200/80 shadow-glass backdrop-blur-md">
+      <CardHeader>
+        <div className="flex items-center space-x-2.5 text-emerald-600">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div>
+            <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
+              Step 2: KYC & Identity Verification
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Provide your government-issued ID details to verify legal eligibility.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Alert Notification Banners */}
+        {errorMessage && (
+          <div className="flex items-start space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+            <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-600 mt-0.5" />
+            <div className="flex-1">{errorMessage}</div>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="flex items-start space-x-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600 mt-0.5" />
+            <div className="flex-1">{successMessage}</div>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Full Name & DOB */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="fullName" required>
+                Full Name (As per PAN / Aadhaar)
+              </Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="e.g. Rahul Sharma"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                error={fieldErrors.fullName}
+                icon={<User className="h-4 w-4" />}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="dob" required>
+                Date of Birth (Must be 18+)
+              </Label>
+              <Input
+                id="dob"
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                error={fieldErrors.dob}
+                icon={<Calendar className="h-4 w-4" />}
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* Gender Selector */}
+          <div className="space-y-1.5">
+            <Label required>Gender</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['MALE', 'FEMALE', 'OTHER'] as const).map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setGender(g)}
+                  className={`rounded-xl border py-2.5 text-xs font-bold transition-all ${
+                    gender === g
+                      ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 ring-2 ring-emerald-500/20 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                  }`}
+                >
+                  {g === 'MALE' ? 'Male' : g === 'FEMALE' ? 'Female' : 'Other'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ID Type Selector */}
+          <div className="space-y-2">
+            <Label required>Government ID Type</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleIdTypeChange('PAN')}
+                className={`flex items-center justify-center space-x-2 rounded-xl border p-3 text-xs font-bold transition-all ${
+                  idType === 'PAN'
+                    ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 ring-2 ring-emerald-500/20 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                }`}
+              >
+                <CreditCard className="h-4 w-4 text-emerald-600" />
+                <span>PAN Card</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleIdTypeChange('AADHAAR')}
+                className={`flex items-center justify-center space-x-2 rounded-xl border p-3 text-xs font-bold transition-all ${
+                  idType === 'AADHAAR'
+                    ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 ring-2 ring-emerald-500/20 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                }`}
+              >
+                <ShieldCheck className="h-4 w-4 text-teal-600" />
+                <span>Aadhaar Card</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ID Document Number */}
+          <div className="space-y-1.5">
+            <Label htmlFor="idNumber" required>
+              {idType === 'PAN' ? '10-Digit PAN Number' : '12-Digit Aadhaar Number'}
+            </Label>
+            <Input
+              id="idNumber"
+              type="text"
+              placeholder={idType === 'PAN' ? 'e.g. ABCDE1234F' : 'e.g. 123456789012'}
+              maxLength={idType === 'PAN' ? 10 : 12}
+              value={idNumber}
+              onChange={(e) =>
+                setIdNumber(idType === 'PAN' ? e.target.value.toUpperCase() : e.target.value)
+              }
+              error={fieldErrors.idNumber}
+              icon={<CreditCard className="h-4 w-4" />}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Residential Address */}
+          <div className="space-y-1.5">
+            <Label htmlFor="address" required>
+              Current Residential Address
+            </Label>
+            <Textarea
+              id="address"
+              placeholder="Flat / House No., Street, Landmark, City, State, PIN Code"
+              rows={2}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              error={fieldErrors.address}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* ID Document Photo Upload */}
+          <div className="pt-1">
+            <FileUpload
+              label="Attach ID Document Photo (Optional)"
+              helperText={`Upload clear photo of your ${idType} (PNG/JPG up to 5MB)`}
+              value={documentFile}
+              previewUrl={previewUrl}
+              onChange={(file, url) => {
+                setDocumentFile(file);
+                setPreviewUrl(url);
+              }}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 shadow-sm mt-4"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Validating KYC Documents...
+              </>
+            ) : (
+              <>
+                Submit KYC & Continue to Underwriting
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </>
+            )}
+          </Button>
+        </form>
+      </CardContent>
+
+      <CardFooter className="bg-slate-50/50 py-3 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 text-center">
+        <p className="w-full text-[11px] text-slate-400">
+          🔒 Your identity data is encrypted and validated in accordance with RBI KYC master directions.
+        </p>
+      </CardFooter>
+    </Card>
+  );
+}
