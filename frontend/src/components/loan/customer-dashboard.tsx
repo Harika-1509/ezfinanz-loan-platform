@@ -1,0 +1,1140 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
+  TrendingUp,
+  Landmark,
+  FileText,
+  User,
+  Camera,
+  RefreshCw,
+  ArrowRight,
+  ShieldCheck,
+  Percent,
+  Download,
+  Calendar,
+  Building2,
+  Briefcase,
+  HelpCircle,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+  CreditCard,
+  Lock,
+  ExternalLink,
+  Copy,
+  Check,
+} from 'lucide-react';
+import { useAuth, ApplicationStage } from '../../contexts/auth-context';
+import { apiClient, ApiError } from '../../lib/api-client';
+import { LoanStepper } from './loan-stepper';
+import { Button } from '../ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
+
+interface KycDetails {
+  id: string;
+  fullName: string;
+  dob: string;
+  gender: string;
+  address: string;
+  idType: string;
+  idNumber: string;
+  idPhotoUrl: string | null;
+  createdAt: string;
+}
+
+interface EligibilityCheck {
+  id: string;
+  income: number;
+  requestedAmount: number;
+  existingDebts: number;
+  employerName: string;
+  designation: string;
+  creditScore: number | null;
+  creditTier: string | null;
+  dtiRatio: number | null;
+  maxEligibleAmount: number | null;
+  interestRate: number | null;
+  decision: string;
+}
+
+interface LoanTerms {
+  id: string;
+  amount: number;
+  tenureMonths: number;
+  interestRate: number;
+  emi: number;
+  processingFee: number;
+  gst: number;
+  adminCharges: number;
+  totalDeductions: number;
+  netDisbursement: number;
+  totalInterest: number;
+  totalRepayment: number;
+  irr: number;
+  createdAt: string;
+}
+
+interface BankAccount {
+  id: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  branchName: string;
+  holderName: string;
+  accountType: string;
+  isVerified: boolean;
+  createdAt: string;
+}
+
+interface Declaration {
+  id: string;
+  termsVersion: string;
+  acceptedAt: string;
+  ipAddress: string | null;
+}
+
+interface Selfie {
+  id: string;
+  photoUrl: string;
+  adminStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectReason: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  createdAt: string;
+}
+
+interface ApplicationData {
+  id: string;
+  userId: string;
+  stage: ApplicationStage;
+  createdAt: string;
+  updatedAt: string;
+  kycDetails?: KycDetails | null;
+  eligibilityCheck?: EligibilityCheck | null;
+  loanTerms?: LoanTerms | null;
+  bankAccount?: BankAccount | null;
+  declaration?: Declaration | null;
+  selfie?: Selfie | null;
+}
+
+export function CustomerDashboard({
+  onNavigateToStage,
+}: {
+  onNavigateToStage?: (stage: ApplicationStage) => void;
+}) {
+  const { user, application: authApp, updateApplicationStage } = useAuth();
+  const router = useRouter();
+
+  const [application, setApplication] = useState<ApplicationData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<boolean>(false);
+
+  // Collapsible section state
+  const [expandedSections, setExpandedSections] = useState<{
+    terms: boolean;
+    kyc: boolean;
+    financial: boolean;
+    bank: boolean;
+    declaration: boolean;
+    selfie: boolean;
+  }>({
+    terms: true,
+    kyc: true,
+    financial: true,
+    bank: true,
+    declaration: true,
+    selfie: true,
+  });
+
+  const toggleSection = (key: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const fetchApplicationDetails = useCallback(async (isSilent = false) => {
+    if (!isSilent) setIsLoading(true);
+    else setIsRefreshing(true);
+    setError(null);
+
+    try {
+      const res = await apiClient.get<{
+        user: any;
+        application: ApplicationData | null;
+      }>('/auth/my-application');
+
+      if (res.data?.application) {
+        setApplication(res.data.application);
+        updateApplicationStage(res.data.application.stage);
+      } else {
+        // Fallback to /auth/me
+        const meRes = await apiClient.get<{
+          user: any;
+          application: ApplicationData | null;
+        }>('/auth/me');
+
+        if (meRes.data?.application) {
+          setApplication(meRes.data.application);
+          updateApplicationStage(meRes.data.application.stage);
+        } else {
+          setApplication(null);
+        }
+      }
+    } catch (err: any) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : 'Failed to load application status. Please try refreshing.'
+      );
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [updateApplicationStage]);
+
+  useEffect(() => {
+    fetchApplicationDetails();
+  }, [fetchApplicationDetails]);
+
+  // Auto-poll status every 12 seconds when waiting for admin review or approval
+  useEffect(() => {
+    if (
+      application?.stage === 'WAITING_ADMIN_REVIEW' ||
+      application?.stage === 'APPROVED'
+    ) {
+      const interval = setInterval(() => {
+        fetchApplicationDetails(true);
+      }, 12000);
+      return () => clearInterval(interval);
+    }
+  }, [application?.stage, fetchApplicationDetails]);
+
+  const handleCopyAppId = () => {
+    if (!application?.id) return;
+    navigator.clipboard.writeText(application.id);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
+
+  const currentStage: ApplicationStage = application?.stage || authApp?.stage || 'WAITING_ADMIN_REVIEW';
+
+  // 1. Loading State
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-64 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          <div className="h-4 w-96 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="h-40 w-full rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Error State
+  if (error && !application) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <div className="rounded-3xl border border-rose-200 bg-rose-50/80 p-8 dark:border-rose-900/40 dark:bg-rose-950/20">
+          <AlertCircle className="mx-auto h-12 w-12 text-rose-600" />
+          <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
+            Unable to Load Application Dashboard
+          </h2>
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+            {error}
+          </p>
+          <Button
+            onClick={() => fetchApplicationDetails()}
+            className="mt-6 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold"
+          >
+            <RefreshCw className="mr-2 h-3.5 w-3.5" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Empty State (No application record found)
+  if (!application) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-glass dark:border-slate-800 dark:bg-slate-900">
+          <Sparkles className="mx-auto h-12 w-12 text-emerald-600" />
+          <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
+            No Active Loan Application
+          </h2>
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+            You do not have an active loan application yet. Start your journey in under 3 minutes with instant automated underwriting.
+          </p>
+          <Link href="/apply">
+            <Button className="mt-6 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-glow">
+              Apply for Personal Loan
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const {
+    kycDetails,
+    eligibilityCheck,
+    loanTerms,
+    bankAccount,
+    declaration,
+    selfie,
+  } = application;
+
+  const maskIdNumber = (val: string, type: string) => {
+    if (!val) return '••••';
+    if (type === 'PAN') {
+      return `${val.slice(0, 5)}••••${val.slice(-1)}`;
+    }
+    if (type === 'AADHAAR') {
+      return `•••• •••• ${val.slice(-4)}`;
+    }
+    return `••••${val.slice(-4)}`;
+  };
+
+  const maskAccount = (val: string) => {
+    if (!val) return '••••';
+    return `•••• •••• ${val.slice(-4)}`;
+  };
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 pb-16">
+      {/* 1. Header & Quick Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <Sparkles className="h-4 w-4" />
+            <span>BORROWER STATUS DASHBOARD</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+            Loan Application Overview
+          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <span>Reference ID:</span>
+            <button
+              onClick={handleCopyAppId}
+              className="inline-flex items-center space-x-1 rounded bg-slate-100 px-2 py-0.5 font-mono font-bold text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 transition-colors"
+              title="Click to copy Application ID"
+            >
+              <span>{application.id}</span>
+              {copiedId ? (
+                <Check className="h-3 w-3 text-emerald-600" />
+              ) : (
+                <Copy className="h-3 w-3 text-slate-400" />
+              )}
+            </button>
+            <span>•</span>
+            <span>Applicant: {kycDetails?.fullName || user?.email || 'Valued Customer'}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchApplicationDetails(true)}
+            disabled={isRefreshing}
+            className="text-xs font-semibold"
+          >
+            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Status'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.print()}
+            className="hidden sm:inline-flex text-xs text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            Print Summary
+          </Button>
+        </div>
+      </div>
+
+      {/* 2. Hero Dynamic Stage Outcome Card */}
+      {currentStage === 'WAITING_ADMIN_REVIEW' && (
+        <Card className="border-amber-300/80 bg-gradient-to-br from-amber-500/10 via-amber-50/50 to-white dark:border-amber-700/50 dark:from-amber-950/40 dark:via-slate-900 dark:to-slate-950 shadow-glass overflow-hidden">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-3">
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-md">
+                  <Clock className="h-6 w-6 animate-pulse" />
+                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500" />
+                  </span>
+                </div>
+                <div>
+                  <Badge className="bg-amber-500 text-white font-bold text-[10px] uppercase tracking-wider mb-1">
+                    Underwriting Review in Progress
+                  </Badge>
+                  <CardTitle className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                    Verification Selfie & Application Submitted
+                  </CardTitle>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-amber-200/80 bg-amber-100/60 px-3 py-1.5 text-right dark:border-amber-900/40 dark:bg-amber-950/40">
+                <p className="text-[10px] font-semibold uppercase text-amber-800 dark:text-amber-300">
+                  Estimated Review Time
+                </p>
+                <p className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                  ~ 10 to 15 Minutes
+                </p>
+              </div>
+            </div>
+            <CardDescription className="text-xs text-slate-600 dark:text-slate-300 mt-2">
+              Our automated risk engine and administrative underwriter are currently reviewing your biometric identity snapshot, KYC records, and repayment capacity.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4 pt-0 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="flex items-start space-x-2.5 rounded-xl border border-amber-200/60 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-850">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-white">1. Data Submitted</p>
+                  <p className="text-[11px] text-slate-500">All 7 onboarding steps completed</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2.5 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+                <Clock className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5 animate-spin" />
+                <div>
+                  <p className="font-bold text-amber-900 dark:text-amber-200">2. Admin Review</p>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300">Underwriter actively evaluating</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2.5 rounded-xl border border-slate-200 bg-white/60 p-3 opacity-60 dark:border-slate-800 dark:bg-slate-850">
+                <Landmark className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-slate-700 dark:text-slate-300">3. Direct Disbursement</p>
+                  <p className="text-[11px] text-slate-500">Instant electronic credit to bank</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl bg-amber-500/10 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-300">
+              <span>💡 This page will automatically update once the underwriter completes the review.</span>
+              <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400">Live Auto-poll: Active</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {currentStage === 'APPROVED' && (
+        <Card className="border-emerald-300 bg-gradient-to-br from-emerald-500/15 via-emerald-50/60 to-white dark:border-emerald-700/60 dark:from-emerald-950/40 dark:via-slate-900 dark:to-slate-950 shadow-glass overflow-hidden">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-glow">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <div>
+                  <Badge className="bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-wider mb-1">
+                    Application Sanctioned & Approved
+                  </Badge>
+                  <CardTitle className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                    Congratulations! Your Loan Has Been Approved
+                  </CardTitle>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-emerald-300 bg-emerald-100/70 px-4 py-2 text-right dark:border-emerald-900/40 dark:bg-emerald-950/50">
+                <p className="text-[10px] font-bold uppercase text-emerald-800 dark:text-emerald-300">
+                  Sanctioned Principal
+                </p>
+                <p className="text-lg font-black text-emerald-950 dark:text-emerald-200">
+                  ₹{(loanTerms?.amount || 0).toLocaleString('en-IN')}
+                </p>
+              </div>
+            </div>
+            <CardDescription className="text-xs text-slate-600 dark:text-slate-300 mt-2">
+              All identity checks, credit assessment, and biometric verifications have passed successfully. Your disbursement is in the final processing queue.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4 pt-0 text-xs">
+            <div className="rounded-2xl border border-emerald-200 bg-white/90 p-4 dark:border-emerald-900/40 dark:bg-slate-850 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+                <div>
+                  <p className="text-[11px] text-slate-500">Net Disbursement Credited To</p>
+                  <p className="font-bold text-slate-900 dark:text-white">
+                    {bankAccount?.bankName || 'Verified Bank'} (A/C: {maskAccount(bankAccount?.accountNumber || '')})
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-slate-500">Net Amount</p>
+                  <p className="font-mono text-sm font-extrabold text-emerald-600">
+                    ₹{(loanTerms?.netDisbursement || 0).toLocaleString('en-IN')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 text-emerald-700 dark:text-emerald-300 text-[11px]">
+                <Sparkles className="h-4 w-4 flex-shrink-0 text-emerald-500" />
+                <span>Our treasury department is initiating the electronic NEFT/IMPS transfer. You will receive an SMS confirmation once credited.</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {currentStage === 'DISBURSED' && (
+        <Card className="border-emerald-500/50 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 text-white shadow-xl overflow-hidden">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black shadow-glow">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <Badge className="bg-emerald-500 text-slate-950 font-black text-[10px] uppercase tracking-wider mb-1">
+                    ACTIVE LOAN ACCOUNT
+                  </Badge>
+                  <CardTitle className="text-lg sm:text-xl font-black text-white">
+                    Loan Disbursed Successfully!
+                  </CardTitle>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/70 px-4 py-2 text-right">
+                <p className="text-[10px] font-bold uppercase text-emerald-400">
+                  Total Disbursed
+                </p>
+                <p className="text-lg font-black text-emerald-300">
+                  ₹{(loanTerms?.netDisbursement || loanTerms?.amount || 0).toLocaleString('en-IN')}
+                </p>
+              </div>
+            </div>
+            <CardDescription className="text-xs text-slate-300 mt-2">
+              Funds have been transferred to your validated bank account. Your monthly repayment schedule is now active.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4 pt-0 text-xs text-slate-300">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+              <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-3">
+                <p className="text-[10px] text-slate-400">Monthly EMI</p>
+                <p className="text-sm font-extrabold text-white">
+                  ₹{(loanTerms?.emi || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-[10px] text-emerald-400">Due on 5th each mo</p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-3">
+                <p className="text-[10px] text-slate-400">Tenure</p>
+                <p className="text-sm font-extrabold text-white">
+                  {loanTerms?.tenureMonths || 0} Months
+                </p>
+                <p className="text-[10px] text-slate-400">Fixed Rate: {loanTerms?.interestRate}%</p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-3">
+                <p className="text-[10px] text-slate-400">Linked Account</p>
+                <p className="text-xs font-bold text-white truncate">
+                  {bankAccount?.bankName || 'HDFC Bank'}
+                </p>
+                <p className="text-[10px] text-slate-400">{maskAccount(bankAccount?.accountNumber || '')}</p>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-800/60 p-3">
+                <p className="text-[10px] text-slate-400">Repayment Mode</p>
+                <p className="text-xs font-bold text-emerald-400">
+                  NACH / e-Mandate
+                </p>
+                <p className="text-[10px] text-slate-400">Autopay Active</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {currentStage === 'REJECTED' && (
+        <Card className="border-rose-300 bg-gradient-to-br from-rose-500/10 via-rose-50/50 to-white dark:border-rose-900/60 dark:from-rose-950/30 dark:via-slate-900 dark:to-slate-950 shadow-glass overflow-hidden">
+          <CardHeader className="pb-3">
+            <div className="flex items-center space-x-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-600 text-white shadow-md">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <Badge variant="destructive" className="font-bold text-[10px] uppercase tracking-wider mb-1">
+                  Application Ineligible / Declined
+                </Badge>
+                <CardTitle className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                  Application Could Not Be Approved
+                </CardTitle>
+              </div>
+            </div>
+            <CardDescription className="text-xs text-slate-600 dark:text-slate-300 mt-2">
+              We regret to inform you that your application does not meet our current automated underwriting or identity verification criteria.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-4 pt-0 text-xs">
+            {selfie?.rejectReason && (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/40 dark:bg-rose-950/40">
+                <p className="font-bold text-rose-900 dark:text-rose-200">
+                  Reason for Decision:
+                </p>
+                <p className="mt-1 text-slate-700 dark:text-slate-300">
+                  {selfie.rejectReason}
+                </p>
+              </div>
+            )}
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-850 space-y-2">
+              <p className="font-bold text-slate-800 dark:text-slate-200">
+                What are your next steps?
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400 text-[11px]">
+                <li>You can re-apply after 30 days if your financial profile or income changes.</li>
+                <li>Ensure all identity documents and uploaded selfies have clear lighting and matching details.</li>
+                <li>Reach out to our customer credit assistance desk if you believe this was an error.</li>
+              </ul>
+              <div className="pt-2 flex flex-wrap gap-2">
+                <Link href="/">
+                  <Button variant="outline" size="sm" className="text-xs">
+                    Return to Home
+                  </Button>
+                </Link>
+                <a href="mailto:support@ezfinanz.com">
+                  <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white text-xs dark:bg-slate-800 dark:hover:bg-slate-700">
+                    Contact Support Desk
+                  </Button>
+                </a>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* In-Progress Alert Banner if user navigates to dashboard before completing */}
+      {currentStage !== 'WAITING_ADMIN_REVIEW' &&
+        currentStage !== 'APPROVED' &&
+        currentStage !== 'DISBURSED' &&
+        currentStage !== 'REJECTED' && (
+          <div className="rounded-2xl border border-teal-200 bg-teal-50/80 p-4 dark:border-teal-900/40 dark:bg-teal-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <Sparkles className="h-5 w-5 text-teal-600 flex-shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-teal-900 dark:text-teal-200">
+                  Application In Progress ({currentStage})
+                </p>
+                <p className="text-[11px] text-teal-700 dark:text-teal-300">
+                  Please complete the remaining onboarding steps to submit your application for review.
+                </p>
+              </div>
+            </div>
+            <Link href="/apply">
+              <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm whitespace-nowrap">
+                Resume Application
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+      {/* 3. Reusable 8-Step Stepper Progress Bar */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+            <Layers className="h-4 w-4 text-emerald-600" />
+            <span>Onboarding Stage Progress</span>
+          </h2>
+          <span className="text-xs font-mono text-emerald-600 font-bold">
+            {currentStage}
+          </span>
+        </div>
+        <LoanStepper currentStage={currentStage} />
+      </div>
+
+      {/* 4. Structured Read-Only 6-Module Application Summary */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            Application Submission Summary
+          </h2>
+          <span className="text-xs text-slate-500">
+            Read-only verified records
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Card 1: Loan Terms & EMI Calculation */}
+          <Card className="border-slate-200/80 shadow-glass">
+            <CardHeader className="cursor-pointer pb-3" onClick={() => toggleSection('terms')}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
+                  <Percent className="h-5 w-5" />
+                  <CardTitle className="text-sm font-bold">
+                    Loan Terms & EMI Calculation
+                  </CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-200">
+                    {loanTerms ? 'Confirmed' : 'Pending'}
+                  </Badge>
+                  {expandedSections.terms ? (
+                    <ChevronUp className="h-4 w-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            {expandedSections.terms && (
+              <CardContent className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 pt-0">
+                {loanTerms ? (
+                  <>
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Sanctioned Principal:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        ₹{loanTerms.amount.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Selected Tenure:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {loanTerms.tenureMonths} Months
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Interest Rate:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {loanTerms.interestRate}% p.a.
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Monthly EMI:</span>
+                      <span className="font-extrabold text-emerald-600">
+                        ₹{loanTerms.emi.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Total Deductions (Fee + GST):</span>
+                      <span className="font-semibold text-rose-600">
+                        - ₹{loanTerms.totalDeductions.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 bg-emerald-50/50 dark:bg-emerald-950/20 px-2 rounded-lg">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">Net Disbursement:</span>
+                      <span className="font-extrabold text-emerald-600">
+                        ₹{loanTerms.netDisbursement.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Total Repayment:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        ₹{loanTerms.totalRepayment.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-500">Effective IRR / APR:</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                        {loanTerms.irr}%
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-slate-400 italic py-2">Loan terms have not been confirmed yet.</p>
+                )}
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Card 2: Identity & KYC Details */}
+          <Card className="border-slate-200/80 shadow-glass">
+            <CardHeader className="cursor-pointer pb-3" onClick={() => toggleSection('kyc')}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-teal-600 dark:text-teal-400">
+                  <User className="h-5 w-5" />
+                  <CardTitle className="text-sm font-bold">
+                    Identity & KYC Details
+                  </CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-[10px] text-teal-600 border-teal-200">
+                    {kycDetails ? 'Verified' : 'Pending'}
+                  </Badge>
+                  {expandedSections.kyc ? (
+                    <ChevronUp className="h-4 w-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            {expandedSections.kyc && (
+              <CardContent className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 pt-0">
+                {kycDetails ? (
+                  <>
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Full Legal Name:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        {kycDetails.fullName}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">ID Document Type:</span>
+                      <Badge variant="secondary" className="text-[10px] font-bold">
+                        {kycDetails.idType}
+                      </Badge>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">ID Document Number:</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                        {maskIdNumber(kycDetails.idNumber, kycDetails.idType)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Date of Birth & Gender:</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">
+                        {new Date(kycDetails.dob).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}{' '}
+                        • {kycDetails.gender}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Address:</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200 text-right max-w-[240px] truncate">
+                        {kycDetails.address}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-500">Document Upload:</span>
+                      <span className="text-emerald-600 font-semibold flex items-center space-x-1">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Document ID Verified</span>
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-slate-400 italic py-2">KYC information pending submission.</p>
+                )}
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Card 3: Financial & Underwriting Profile */}
+          <Card className="border-slate-200/80 shadow-glass">
+            <CardHeader className="cursor-pointer pb-3" onClick={() => toggleSection('financial')}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
+                  <TrendingUp className="h-5 w-5" />
+                  <CardTitle className="text-sm font-bold">
+                    Financial & Underwriting Profile
+                  </CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-[10px] text-indigo-600 border-indigo-200">
+                    {eligibilityCheck ? 'Evaluated' : 'Pending'}
+                  </Badge>
+                  {expandedSections.financial ? (
+                    <ChevronUp className="h-4 w-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            {expandedSections.financial && (
+              <CardContent className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 pt-0">
+                {eligibilityCheck ? (
+                  <>
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Monthly Net Income:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        ₹{eligibilityCheck.income.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Employer & Role:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 text-right max-w-[240px] truncate">
+                        {eligibilityCheck.employerName} ({eligibilityCheck.designation})
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Existing Monthly Debts:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        ₹{eligibilityCheck.existingDebts.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Simulated CIBIL Score:</span>
+                      <Badge className="bg-emerald-600 text-white font-bold text-[10px]">
+                        {eligibilityCheck.creditScore || 780} (EXCELLENT)
+                      </Badge>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Debt-to-Income (DTI):</span>
+                      <span className="font-mono font-bold text-emerald-600">
+                        {eligibilityCheck.dtiRatio || 25}% (Optimal &lt; 50%)
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-500">Max Sanction Limit:</span>
+                      <span className="font-bold text-indigo-600">
+                        ₹{(eligibilityCheck.maxEligibleAmount || 500000).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-slate-400 italic py-2">Underwriting evaluation pending.</p>
+                )}
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Card 4: Linked Bank Account */}
+          <Card className="border-slate-200/80 shadow-glass">
+            <CardHeader className="cursor-pointer pb-3" onClick={() => toggleSection('bank')}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-cyan-600 dark:text-cyan-400">
+                  <Landmark className="h-5 w-5" />
+                  <CardTitle className="text-sm font-bold">
+                    Disbursement Bank Account
+                  </CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-[10px] text-cyan-600 border-cyan-200">
+                    {bankAccount ? 'Linked' : 'Pending'}
+                  </Badge>
+                  {expandedSections.bank ? (
+                    <ChevronUp className="h-4 w-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            {expandedSections.bank && (
+              <CardContent className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 pt-0">
+                {bankAccount ? (
+                  <>
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Bank Name & Branch:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        {bankAccount.bankName} - {bankAccount.branchName}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Account Number:</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                        {maskAccount(bankAccount.accountNumber)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">IFSC Code:</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                        {bankAccount.ifscCode}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Beneficiary Name:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {bankAccount.holderName}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-500">Account Type & Verification:</span>
+                      <span className="text-emerald-600 font-semibold flex items-center space-x-1">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Savings A/C (Penny Drop Verified)</span>
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-slate-400 italic py-2">Bank account linking pending.</p>
+                )}
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Card 5: Statutory Undertaking & Legal Consent */}
+          <Card className="border-slate-200/80 shadow-glass">
+            <CardHeader className="cursor-pointer pb-3" onClick={() => toggleSection('declaration')}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
+                  <FileText className="h-5 w-5" />
+                  <CardTitle className="text-sm font-bold">
+                    Statutory Undertaking & E-Consent
+                  </CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-[10px] text-blue-600 border-blue-200">
+                    {declaration ? 'E-Signed' : 'Pending'}
+                  </Badge>
+                  {expandedSections.declaration ? (
+                    <ChevronUp className="h-4 w-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            {expandedSections.declaration && (
+              <CardContent className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 pt-0">
+                {declaration ? (
+                  <>
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Statutory Version:</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                        {declaration.termsVersion || 'v1.0'}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">Legal Standard:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        Information Technology Act, 2000
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-500">E-Signature Timestamp:</span>
+                      <span className="font-mono text-slate-700 dark:text-slate-300">
+                        {new Date(declaration.acceptedAt).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-500">Audit Status:</span>
+                      <span className="text-emerald-600 font-semibold flex items-center space-x-1">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        <span>Legally Binding Electronic Consent</span>
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-slate-400 italic py-2">Declaration consent pending confirmation.</p>
+                )}
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Card 6: Biometric Selfie Verification */}
+          <Card className="border-slate-200/80 shadow-glass">
+            <CardHeader className="cursor-pointer pb-3" onClick={() => toggleSection('selfie')}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-purple-600 dark:text-purple-400">
+                  <Camera className="h-5 w-5" />
+                  <CardTitle className="text-sm font-bold">
+                    Biometric Identity Verification
+                  </CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge
+                    variant={selfie?.adminStatus === 'APPROVED' ? 'default' : 'outline'}
+                    className={`text-[10px] ${
+                      selfie?.adminStatus === 'APPROVED'
+                        ? 'bg-emerald-600 text-white'
+                        : selfie?.adminStatus === 'REJECTED'
+                        ? 'text-rose-600 border-rose-200'
+                        : 'text-amber-600 border-amber-200'
+                    }`}
+                  >
+                    {selfie ? selfie.adminStatus : 'Pending'}
+                  </Badge>
+                  {expandedSections.selfie ? (
+                    <ChevronUp className="h-4 w-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            {expandedSections.selfie && (
+              <CardContent className="space-y-3 text-xs text-slate-600 dark:text-slate-300 pt-0">
+                {selfie ? (
+                  <div className="flex items-start space-x-4 pt-1">
+                    {selfie.photoUrl && (
+                      <div className="relative h-20 w-16 flex-shrink-0 overflow-hidden rounded-xl border-2 border-emerald-500 shadow-sm">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={selfie.photoUrl}
+                          alt="Biometric Selfie"
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-1 text-xs">
+                      <p className="font-bold text-slate-900 dark:text-white">
+                        Facial Liveness Verified
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        Uploaded on: {new Date(selfie.createdAt).toLocaleString('en-IN')}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        Status:{' '}
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          {selfie.adminStatus}
+                        </span>
+                      </p>
+                      {selfie.reviewedAt && (
+                        <p className="text-[10px] text-emerald-600 font-medium">
+                          Reviewed on: {new Date(selfie.reviewedAt).toLocaleString('en-IN')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-slate-400 italic py-2">Selfie verification pending.</p>
+                )}
+              </CardContent>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

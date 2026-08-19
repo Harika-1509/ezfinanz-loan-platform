@@ -166,6 +166,18 @@ export class AuthController {
       next(error);
     }
   }
+
+  /**
+   * GET /api/v1/auth/my-application
+   */
+  public async getMyApplication(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await authService.getMyApplicationDetails(req.user!.userId);
+      sendSuccess(res, result, 'Customer loan application details retrieved successfully.');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const authController = new AuthController();

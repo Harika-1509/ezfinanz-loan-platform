@@ -65,6 +65,19 @@ export function Navbar() {
           >
             Apply Loan
           </Link>
+          {isAuthenticated && role === 'CUSTOMER' && (
+            <Link
+              href="/dashboard"
+              className={`flex items-center space-x-1.5 transition-colors hover:text-emerald-600 ${
+                pathname === '/dashboard'
+                  ? 'text-emerald-600 font-semibold'
+                  : 'text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              <span>Dashboard</span>
+            </Link>
+          )}
           {role === 'ADMIN' && (
             <Link
               href="/admin"

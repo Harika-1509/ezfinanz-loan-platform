@@ -29,6 +29,7 @@ import { LoanTermsCalculator } from '../../components/loan/loan-terms-calculator
 import { BankAccountForm } from '../../components/loan/bank-account-form';
 import { DeclarationForm } from '../../components/loan/declaration-form';
 import { SelfieCapture } from '../../components/loan/selfie-capture';
+import { CustomerDashboard } from '../../components/loan/customer-dashboard';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -197,87 +198,29 @@ export default function ApplyPage() {
             />
           )}
 
-          {/* Stage 6 & 7: Biometric Selfie Verification & Admin Review (Step 7 of 8) */}
+          {/* Stage 6 & 7: Biometric Selfie Verification Form */}
           {(currentStage === 'DECLARATION_CONFIRMED' ||
-            currentStage === 'SELFIE_PENDING' ||
-            currentStage === 'WAITING_ADMIN_REVIEW') && (
+            currentStage === 'SELFIE_PENDING') && (
             <SelfieCapture
               onSuccess={() => {
                 setCurrentStage('WAITING_ADMIN_REVIEW');
                 updateApplicationStage('WAITING_ADMIN_REVIEW');
               }}
-              onBack={
-                currentStage !== 'WAITING_ADMIN_REVIEW'
-                  ? () => setCurrentStage('BANK_ADDED')
-                  : undefined
-              }
+              onBack={() => setCurrentStage('BANK_ADDED')}
             />
           )}
 
-          {/* Stage 8: Application Approved / Ready for Disbursement */}
-          {currentStage === 'APPROVED' && (
-            <Card className="border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/50 shadow-glass dark:border-emerald-900/50 dark:from-slate-900 dark:to-emerald-950/30">
-              <CardHeader>
-                <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-6 w-6" />
-                  <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
-                    Application Approved! Ready for Disbursement
-                  </CardTitle>
-                </div>
-                <CardDescription className="text-xs text-slate-600 dark:text-slate-300">
-                  Congratulations! All identity, underwriting, and biometric verifications have passed.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-xs text-slate-600 dark:text-slate-300">
-                <div className="rounded-2xl border border-emerald-200 bg-white/90 p-4 dark:border-emerald-900/40 dark:bg-slate-850">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-500">Disbursement Status</span>
-                    <Badge className="bg-emerald-600 text-white text-[10px]">
-                      Processing NEFT Queue
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-slate-600 dark:text-slate-400">
-                    Your sanctioned funds will be electronically transferred to your validated bank account shortly. You will receive an SMS and email notification once credited.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Stage 9: Disbursed Celebration Dashboard */}
-          {currentStage === 'DISBURSED' && (
-            <Card className="border-emerald-500/40 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 text-white shadow-xl">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-emerald-400">
-                    <Sparkles className="h-6 w-6" />
-                    <CardTitle className="text-xl font-black text-white">
-                      Loan Disbursed Successfully!
-                    </CardTitle>
-                  </div>
-                  <Badge className="bg-emerald-500 text-slate-950 font-bold text-[10px]">
-                    ACTIVE LOAN
-                  </Badge>
-                </div>
-                <CardDescription className="text-xs text-slate-300">
-                  Funds have been successfully credited to your bank account.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-xs text-slate-300">
-                <div className="rounded-2xl border border-slate-800 bg-slate-800/60 p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span>Active Loan ID</span>
-                    <span className="font-mono font-bold text-white">
-                      {application?.id || 'EZF-LOAN-001'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Repayment Status</span>
-                    <span className="text-emerald-400 font-bold">Standard Monthly Autopay</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Stage 8, 9, 10: Customer Status Dashboard (Underwriter Review, Approved, Disbursed, Rejected) */}
+          {(currentStage === 'WAITING_ADMIN_REVIEW' ||
+            currentStage === 'APPROVED' ||
+            currentStage === 'DISBURSED' ||
+            currentStage === 'REJECTED') && (
+            <CustomerDashboard
+              onNavigateToStage={(stage) => {
+                setCurrentStage(stage);
+                updateApplicationStage(stage);
+              }}
+            />
           )}
         </div>
       </div>

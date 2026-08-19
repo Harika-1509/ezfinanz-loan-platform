@@ -59,7 +59,10 @@ router.post('/google/mock', validate(mockOAuthSchema), (req, res, next) =>
   authController.googleMock(req, res, next)
 );
 
-// Protected Authentication Profile
+// Protected Authentication Profile & Customer Loan Application Summary
 router.get('/me', authGuard, (req, res, next) => authController.getMe(req, res, next));
+router.get('/my-application', authGuard, (req, res, next) =>
+  authController.getMyApplication(req, res, next)
+);
 
 export default router;

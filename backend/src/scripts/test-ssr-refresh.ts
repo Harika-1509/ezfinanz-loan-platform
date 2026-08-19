@@ -4,6 +4,7 @@ async function testAllRoutes() {
     '/login',
     '/signup',
     '/verify',
+    '/dashboard',
     '/apply',
     '/apply/kyc',
     '/apply/eligibility',

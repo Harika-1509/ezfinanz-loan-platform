@@ -373,11 +373,11 @@ export class AuthService {
   }
 
   /**
-   * Get authenticated user profile with active loan application
+   * Get authenticated user profile with active loan application and all step details
    */
   public async getMe(
     userId: string
-  ): Promise<{ user: SanitizedUser; application: Application | null }> {
+  ): Promise<{ user: SanitizedUser; application: any }> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -389,11 +389,86 @@ export class AuthService {
     const application = await prisma.application.findFirst({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
+      include: {
+        kycDetails: true,
+        eligibilityCheck: true,
+        loanTerms: true,
+        bankAccount: true,
+        declaration: true,
+        selfie: true,
+      },
     });
 
     return {
       user: this.sanitizeUser(user),
       application,
+    };
+  }
+
+  /**
+   * Get comprehensive customer loan dashboard summary
+   */
+  public async getMyApplicationDetails(userId: string): Promise<any> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw AppError.notFound('User not found.');
+    }
+
+    const application = await prisma.application.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        kycDetails: true,
+        eligibilityCheck: true,
+        loanTerms: true,
+        bankAccount: true,
+        declaration: true,
+        selfie: true,
+      },
+    });
+
+    if (!application) {
+      return {
+        user: this.sanitizeUser(user),
+        application: null,
+      };
+    }
+
+    return {
+      user: this.sanitizeUser(user),
+      application: {
+        ...application,
+        loanTerms: application.loanTerms
+          ? {
+              ...application.loanTerms,
+              amount: Number(application.loanTerms.amount),
+              interestRate: Number(application.loanTerms.interestRate),
+              processingFee: Number(application.loanTerms.processingFee),
+              gst: Number(application.loanTerms.gst),
+              adminCharges: Number(application.loanTerms.adminCharges),
+              totalDeductions: Number(application.loanTerms.totalDeductions),
+              netDisbursement: Number(application.loanTerms.netDisbursement),
+              emi: Number(application.loanTerms.emi),
+              totalInterest: Number(application.loanTerms.totalInterest),
+              totalRepayment: Number(application.loanTerms.totalRepayment),
+              irr: Number(application.loanTerms.irr),
+            }
+          : null,
+        eligibilityCheck: application.eligibilityCheck
+          ? {
+              ...application.eligibilityCheck,
+              income: Number(application.eligibilityCheck.income),
+              requestedAmount: Number(application.eligibilityCheck.requestedAmount),
+              existingDebts: Number(application.eligibilityCheck.existingDebts),
+              maxEligibleAmount: application.eligibilityCheck.maxEligibleAmount
+                ? Number(application.eligibilityCheck.maxEligibleAmount)
+                : null,
+            }
+          : null,
+      },
     };
   }
 }
