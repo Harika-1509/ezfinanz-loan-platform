@@ -12,6 +12,9 @@ vi.mock('../../../prisma/client', () => ({
       findUnique: vi.fn(),
       findFirst: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
@@ -53,7 +56,7 @@ describe('stageGuard Middleware & Progression Helpers', () => {
   });
 
   describe('stageGuard Middleware', () => {
-    it('should allow request when application stage matches allowed stages', async () => {
+    it('should allow request when application stage matches allowed stages and customer is verified', async () => {
       const mockApp = {
         id: 'app_123',
         userId: 'usr_cust_1',
@@ -61,6 +64,10 @@ describe('stageGuard Middleware & Progression Helpers', () => {
       };
 
       vi.mocked(prisma.application.findUnique).mockResolvedValue(mockApp as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        emailVerified: true,
+        phoneVerified: true,
+      } as any);
 
       const req = {
         user: { userId: 'usr_cust_1', role: Role.CUSTOMER },
@@ -77,6 +84,36 @@ describe('stageGuard Middleware & Progression Helpers', () => {
       expect(req.application).toEqual(mockApp);
     });
 
+    it('should reject with 403 Forbidden when customer is not dual verified for KYC stages', async () => {
+      const mockApp = {
+        id: 'app_123',
+        userId: 'usr_cust_1',
+        stage: ApplicationStage.KYC_PENDING,
+      };
+
+      vi.mocked(prisma.application.findUnique).mockResolvedValue(mockApp as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        emailVerified: true,
+        phoneVerified: false,
+      } as any);
+
+      const req = {
+        user: { userId: 'usr_cust_1', role: Role.CUSTOMER },
+        params: { applicationId: 'app_123' },
+      } as unknown as Request;
+
+      const res = {} as Response;
+      const next = vi.fn() as unknown as NextFunction;
+
+      const guard = stageGuard(ApplicationStage.KYC_PENDING);
+      await guard(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(AppError));
+      const error = vi.mocked(next).mock.calls[0][0] as unknown as AppError;
+      expect(error.statusCode).toBe(403);
+      expect(error.message).toContain('Account verification required');
+    });
+
     it('should reject with 400 Bad Request when application is at the wrong stage', async () => {
       const mockApp = {
         id: 'app_123',
@@ -85,6 +122,10 @@ describe('stageGuard Middleware & Progression Helpers', () => {
       };
 
       vi.mocked(prisma.application.findUnique).mockResolvedValue(mockApp as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        emailVerified: true,
+        phoneVerified: true,
+      } as any);
 
       const req = {
         user: { userId: 'usr_cust_1', role: Role.CUSTOMER },

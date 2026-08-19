@@ -8,7 +8,8 @@ import { z } from 'zod';
  * - At least 1 number
  * - At least 1 special character
  */
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]).{8,}$/;
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]).{8,}$/;
 
 export const signupSchema = {
   body: z.object({
@@ -41,7 +42,9 @@ export const loginSchema = {
       .trim()
       .toLowerCase()
       .email('Please provide a valid email address'),
-    password: z.string({ required_error: 'Password is required' }).min(1, 'Password cannot be empty'),
+    password: z
+      .string({ required_error: 'Password is required' })
+      .min(1, 'Password cannot be empty'),
   }),
 };
 

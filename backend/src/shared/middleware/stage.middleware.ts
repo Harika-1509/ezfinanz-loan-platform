@@ -58,7 +58,8 @@ export function canTransitionStage(
  * Stage Guard Middleware
  *
  * Ensures an application exists, belongs to the authenticated user (or user is ADMIN),
- * and is in one of the allowed lifecycle stages before allowing the route handler to execute.
+ * is in one of the allowed lifecycle stages, and enforces that both email_verified and phone_verified
+ * are completed before proceeding to KYC or later stages.
  *
  * @param allowedStages - List of ApplicationStage values in which the endpoint is permitted
  */
@@ -99,6 +100,28 @@ export const stageGuard = (...allowedStages: ApplicationStage[]) => {
       // Authorization check: Customer can only access their own application
       if (req.user.role !== 'ADMIN' && application.userId !== req.user.userId) {
         throw AppError.forbidden('You are not authorized to view or modify this loan application.');
+      }
+
+      // Verification check: Non-admin users must have both email and phone verified before KYC or beyond
+      if (req.user.role !== 'ADMIN') {
+        const kycThresholdIndex = STAGE_PROGRESSION.indexOf(ApplicationStage.KYC_PENDING);
+        const requiresVerification = allowedStages.some((st) => {
+          const idx = STAGE_PROGRESSION.indexOf(st);
+          return idx >= kycThresholdIndex;
+        });
+
+        if (requiresVerification) {
+          const userRecord = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: { emailVerified: true, phoneVerified: true },
+          });
+
+          if (!userRecord || !userRecord.emailVerified || !userRecord.phoneVerified) {
+            throw AppError.forbidden(
+              'Account verification required. You must verify both your email address and mobile phone number before proceeding with KYC.'
+            );
+          }
+        }
       }
 
       // Stage check

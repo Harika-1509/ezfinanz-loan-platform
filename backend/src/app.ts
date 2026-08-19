@@ -6,8 +6,10 @@ import cookieParser from 'cookie-parser';
 import { config } from './config';
 import healthRoutes from './modules/health/health.routes';
 import { authRoutes } from './modules/auth';
+import { verificationRoutes } from './modules/verification';
 import { requestLogger } from './shared/middleware/logger.middleware';
 import { errorHandler, notFoundHandler } from './shared/middleware/error.middleware';
+import { authLimiter } from './shared/middleware/rate-limit.middleware';
 import { sendSuccess } from './shared/utils/api-response';
 
 export const createApp = (): Application => {
@@ -52,6 +54,7 @@ export const createApp = (): Application => {
           apiV1: config.API_PREFIX,
           apiV1Health: `${config.API_PREFIX}/health`,
           apiV1Auth: `${config.API_PREFIX}/auth`,
+          apiV1Verification: `${config.API_PREFIX}/verification`,
           uploads: '/uploads',
         },
       },
@@ -62,7 +65,8 @@ export const createApp = (): Application => {
   // API v1 Routes
   const apiV1Router = express.Router();
   apiV1Router.use('/health', healthRoutes);
-  apiV1Router.use('/auth', authRoutes);
+  apiV1Router.use('/auth', authLimiter, authRoutes);
+  apiV1Router.use('/verification', verificationRoutes);
 
   app.use(config.API_PREFIX, apiV1Router);
 
