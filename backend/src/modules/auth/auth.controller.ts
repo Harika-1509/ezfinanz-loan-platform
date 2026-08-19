@@ -62,6 +62,42 @@ export class AuthController {
   }
 
   /**
+   * POST /api/v1/auth/otp/send
+   */
+  public async sendOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await authService.sendLoginOtp(req.body);
+      sendSuccess(res, result, result.message);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/v1/auth/otp/verify
+   */
+  public async verifyOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await authService.verifyLoginOtp(req.body);
+
+      // Set httpOnly refresh token cookie
+      res.cookie('refreshToken', result.refreshToken, REFRESH_COOKIE_OPTIONS);
+
+      sendSuccess(
+        res,
+        {
+          user: result.user,
+          application: result.application,
+          accessToken: result.accessToken,
+        },
+        'Phone OTP verified successfully. Logged in.'
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /api/v1/auth/google/callback
    * Live Passport.js callback handler
    */

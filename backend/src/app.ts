@@ -86,7 +86,7 @@ export const createApp = (): Application => {
   // API v1 Routes
   const apiV1Router = express.Router();
   apiV1Router.use('/health', healthRoutes);
-  apiV1Router.use('/auth', authLimiter as any, authRoutes);
+  apiV1Router.use('/auth', authRoutes);
   apiV1Router.use('/verification', verificationRoutes);
   apiV1Router.use('/kyc', kycRoutes);
   apiV1Router.use('/eligibility', eligibilityRoutes);

@@ -69,3 +69,31 @@ export const mockOAuthSchema = {
 };
 
 export type MockOAuthInput = z.infer<typeof mockOAuthSchema.body>;
+
+export const sendAuthOtpSchema = {
+  body: z.object({
+    phone: z
+      .string({ required_error: 'Mobile phone number is required' })
+      .trim()
+      .regex(/^[6-9]\d{9}$/, 'Please provide a valid 10-digit Indian mobile number'),
+    purpose: z.string().optional().default('LOGIN'),
+  }),
+};
+
+export type SendAuthOtpInput = z.infer<typeof sendAuthOtpSchema.body>;
+
+export const verifyAuthOtpSchema = {
+  body: z.object({
+    phone: z
+      .string({ required_error: 'Mobile phone number is required' })
+      .trim()
+      .regex(/^[6-9]\d{9}$/, 'Please provide a valid 10-digit Indian mobile number'),
+    otp: z
+      .string({ required_error: 'OTP is required' })
+      .trim()
+      .length(6, 'OTP must be exactly 6 digits'),
+    purpose: z.string().optional().default('LOGIN'),
+  }),
+};
+
+export type VerifyAuthOtpInput = z.infer<typeof verifyAuthOtpSchema.body>;

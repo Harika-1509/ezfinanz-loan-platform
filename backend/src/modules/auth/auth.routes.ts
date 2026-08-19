@@ -3,19 +3,48 @@ import passport from 'passport';
 import { authController } from './auth.controller';
 import { validate } from '../../shared/middleware/validate.middleware';
 import { authGuard } from '../../shared/middleware/auth.middleware';
-import { signupSchema, loginSchema, refreshTokenSchema, mockOAuthSchema } from './auth.schema';
+import {
+  signupSchema,
+  loginSchema,
+  refreshTokenSchema,
+  mockOAuthSchema,
+  sendAuthOtpSchema,
+  verifyAuthOtpSchema,
+} from './auth.schema';
 import config from '../../config';
 import { sendError } from '../../shared/utils/api-response';
+import { authLimiter } from '../../shared/middleware/rate-limit.middleware';
 
 const router = Router();
 
 // Public Authentication Routes
-router.post('/signup', validate(signupSchema), (req, res, next) =>
-  authController.signup(req, res, next)
+router.post(
+  '/signup',
+  authLimiter as any,
+  validate(signupSchema),
+  (req, res, next) => authController.signup(req, res, next)
 );
 
-router.post('/login', validate(loginSchema), (req, res, next) =>
-  authController.login(req, res, next)
+router.post(
+  '/login',
+  authLimiter as any,
+  validate(loginSchema),
+  (req, res, next) => authController.login(req, res, next)
+);
+
+// Phone OTP Login Routes
+router.post(
+  '/otp/send',
+  authLimiter as any,
+  validate(sendAuthOtpSchema),
+  (req, res, next) => authController.sendOtp(req, res, next)
+);
+
+router.post(
+  '/otp/verify',
+  authLimiter as any,
+  validate(verifyAuthOtpSchema),
+  (req, res, next) => authController.verifyOtp(req, res, next)
 );
 
 router.post('/refresh', validate(refreshTokenSchema), (req, res, next) =>

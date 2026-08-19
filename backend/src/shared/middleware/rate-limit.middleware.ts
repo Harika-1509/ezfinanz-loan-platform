@@ -1,22 +1,37 @@
 import rateLimit from 'express-rate-limit';
+import { Request } from 'express';
 import { sendError } from '../utils/api-response';
 import { config } from '../../config';
 
-const isTest = () =>
-  process.env.NODE_ENV === 'test' ||
-  process.env.VITEST === 'true' ||
-  config.NODE_ENV === 'test';
+/**
+ * Determines whether rate limiting should be bypassed (development, test environments, or local loopback)
+ */
+export const isDevOrTest = (req: Request): boolean => {
+  const ip = req.ip || req.socket.remoteAddress || '';
+  const isLocalIp =
+    ip === '127.0.0.1' ||
+    ip === '::1' ||
+    ip === '::ffff:127.0.0.1' ||
+    req.hostname === 'localhost';
+
+  return (
+    config.NODE_ENV !== 'production' ||
+    process.env.NODE_ENV !== 'production' ||
+    process.env.VITEST === 'true' ||
+    isLocalIp
+  );
+};
 
 /**
  * Rate limiter for OTP generation/dispatch to prevent spamming and SMS exhaustion.
- * Limit: 5 requests per 10 minutes per IP
+ * Limit: 10 requests per 10 minutes per IP (bypassed in local/dev)
  */
 export const otpSendLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 5,
+  max: config.NODE_ENV === 'production' ? 10 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: isTest,
+  skip: (req) => isDevOrTest(req as Request),
   handler: (_req, res) => {
     sendError(
       res as any,
@@ -28,15 +43,15 @@ export const otpSendLimiter = rateLimit({
 });
 
 /**
- * Rate limiter for Authentication (Login / Signup) endpoints to mitigate brute-force attacks.
- * Limit: 15 requests per 15 minutes per IP
+ * Rate limiter for Authentication (Login / Signup / OTP) endpoints to mitigate brute-force attacks.
+ * Limit: 60 requests per 15 minutes per IP (bypassed in local/dev)
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15,
+  max: config.NODE_ENV === 'production' ? 60 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: isTest,
+  skip: (req) => isDevOrTest(req as Request),
   handler: (_req, res) => {
     sendError(
       res as any,

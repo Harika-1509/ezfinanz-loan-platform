@@ -1,9 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { Role, ApplicationStage, User, Application } from '@prisma/client';
 import { prisma } from '../../prisma/client';
-import { SignupInput, LoginInput } from './auth.schema';
+import { SignupInput, LoginInput, SendAuthOtpInput, VerifyAuthOtpInput } from './auth.schema';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../../shared/utils/jwt';
 import { AppError } from '../../shared/utils/app-error';
+import { otpService } from '../../shared/services/otp.service';
 
 export interface SanitizedUser {
   id: string;
@@ -469,6 +470,113 @@ export class AuthService {
             }
           : null,
       },
+    };
+  }
+
+  /**
+   * Phone OTP Login: Send OTP
+   */
+  public async sendLoginOtp(
+    input: SendAuthOtpInput
+  ): Promise<{ target: string; expiresAt: Date; message: string }> {
+    const phone = input.phone.trim();
+    const purpose = input.purpose || 'LOGIN';
+
+    const { otp, expiresAt } = await otpService.generateOtp(phone, purpose);
+
+    return {
+      target: phone,
+      expiresAt,
+      message: `Login OTP sent to mobile number +91 ${phone}`,
+    };
+  }
+
+  /**
+   * Phone OTP Login: Verify OTP & Issue Session
+   */
+  public async verifyLoginOtp(input: VerifyAuthOtpInput): Promise<AuthResult> {
+    const phone = input.phone.trim();
+    const otp = input.otp.trim();
+    const purpose = input.purpose || 'LOGIN';
+
+    const isValid = await otpService.verifyOtp(phone, otp, purpose);
+    if (!isValid) {
+      throw AppError.badRequest('Invalid or expired OTP. Please try again.');
+    }
+
+    // Check if user exists by phone
+    let user = await prisma.user.findUnique({
+      where: { phone },
+      include: {
+        applications: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    let application = user?.applications[0] || null;
+
+    if (!user) {
+      // Auto-register new borrower user with phone
+      user = await prisma.user.create({
+        data: {
+          phone,
+          role: Role.CUSTOMER,
+          phoneVerified: true,
+          emailVerified: false,
+          applications: {
+            create: {
+              stage: ApplicationStage.SIGNUP_COMPLETED,
+            },
+          },
+        },
+        include: {
+          applications: true,
+        },
+      });
+      application = user.applications[0];
+    } else if (!user.phoneVerified) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { phoneVerified: true },
+        include: {
+          applications: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      });
+      application = user.applications[0] || null;
+    }
+
+    // Generate JWT access & refresh tokens
+    const accessToken = generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const refreshToken = generateRefreshToken({
+      userId: user.id,
+    });
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    await prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        token: refreshToken,
+        expiresAt,
+      },
+    });
+
+    return {
+      user: this.sanitizeUser(user),
+      application,
+      accessToken,
+      refreshToken,
     };
   }
 }
