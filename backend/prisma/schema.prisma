@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model supporting Customers and Admins
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum ApplicationStatus {
+  DRAFT
+  EMAIL_PHONE_VERIFIED
+  KYC_SUBMITTED
+  ELIGIBILITY_CHECKED
+  EMI_SELECTED
+  BANK_ADDED
+  DECLARATION_ACCEPTED
+  SELFIE_PENDING
+  WAITING_ADMIN_REVIEW
+  APPROVED
+  REJECTED
+  DISBURSED
+}
+
+enum IdType {
+  PAN
+  AADHAAR
+  PASSPORT
+  VOTER_ID
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String?        @unique
+  phoneNumber   String?        @unique
+  passwordHash  String?
+  name          String?
+  role          Role           @default(CUSTOMER)
+  isEmailVerified Boolean      @default(false)
+  isPhoneVerified Boolean      @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  applications  Application[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model Application {
+  id                String            @id @default(uuid())
+  userId            String
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status            ApplicationStatus @default(DRAFT)
+  currentStep       Int               @default(1)
+
+  // Step 3: KYC Details
+  fullName          String?
+  dateOfBirth       DateTime?
+  gender            String?
+  currentAddress    String?
+  idType            IdType?
+  idNumber          String?
+  idDocumentUrl     String?
+
+  // Step 4: Loan Financials & Eligibility
+  monthlyIncome     Decimal?          @db.Decimal(12, 2)
+  requestedAmount   Decimal?          @db.Decimal(12, 2)
+  cibilScore        Int?
+  currentDebts      Decimal?          @db.Decimal(12, 2)
+  employerName      String?
+  designation       String?
+  eligibilityStatus String?
+  maxApprovedAmount Decimal?          @db.Decimal(12, 2)
+
+  // Step 5: EMI & Terms
+  selectedTenureMonths Int?
+  interestRate         Decimal?       @db.Decimal(5, 2)
+  processingFee        Decimal?       @db.Decimal(10, 2)
+  gstAmount            Decimal?       @db.Decimal(10, 2)
+  monthlyEmi           Decimal?       @db.Decimal(12, 2)
+  totalInterest        Decimal?       @db.Decimal(12, 2)
+  totalRepayment       Decimal?       @db.Decimal(12, 2)
+  netDisbursement      Decimal?       @db.Decimal(12, 2)
+  irrRate              Decimal?       @db.Decimal(5, 2)
+
+  // Step 6: Bank Account
+  accountHolderName String?
+  accountNumber     String?
+  ifscCode          String?
+  bankName          String?
+
+  // Step 7: Declaration
+  isDeclarationConfirmed Boolean      @default(false)
+  declarationTimestamp   DateTime?
+
+  // Step 8: Live Selfie / Photo
+  selfieUrl         String?
+  adminReviewNotes  String?
+  adminReviewedAt   DateTime?
+  adminReviewedBy   String?
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@map("applications")
+}
