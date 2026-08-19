@@ -1,10 +1,11 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import { config } from './config';
-import routes from './routes';
-import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
+import healthRoutes from './modules/health/health.routes';
+import { requestLogger } from './shared/middleware/logger.middleware';
+import { errorHandler, notFoundHandler } from './shared/middleware/error.middleware';
+import { sendSuccess } from './shared/utils/api-response';
 
 export const createApp = (): Application => {
   const app = express();
@@ -20,28 +21,41 @@ export const createApp = (): Application => {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  if (config.NODE_ENV !== 'test') {
-    app.use(morgan('dev'));
-  }
+  // Custom Request Logger
+  app.use(requestLogger());
 
-  // Root welcome / health check
+  // Direct Health check endpoint
+  app.use('/health', healthRoutes);
+
+  // Root welcome endpoint with API discovery
   app.get('/', (_req, res) => {
-    res.status(200).json({
-      name: 'EZFinanz Loan Platform API',
-      version: '1.0.0',
-      status: 'active',
-      endpoints: {
-        health: '/api/v1/health',
+    return sendSuccess(
+      res,
+      {
+        name: 'EZFinanz Loan Platform API',
+        version: '1.0.0',
+        environment: config.NODE_ENV,
+        endpoints: {
+          health: '/health',
+          apiV1: config.API_PREFIX,
+          apiV1Health: `${config.API_PREFIX}/health`,
+        },
       },
-    });
+      'Welcome to EZFinanz Loan Platform API'
+    );
   });
 
-  // API Routes
-  app.use('/api/v1', routes);
+  // API v1 Routes
+  const apiV1Router = express.Router();
+  apiV1Router.use('/health', healthRoutes);
 
-  // 404 & Global Error Handling
+  app.use(config.API_PREFIX, apiV1Router);
+
+  // 404 & Central Global Error Handling
   app.use(notFoundHandler);
   app.use(errorHandler);
 
   return app;
 };
+
+export default createApp;

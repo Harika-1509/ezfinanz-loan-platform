@@ -21,7 +21,8 @@ const server = app.listen(config.PORT, () => {
   ======================================================
   🚀 EZFinanz Backend API running on port ${config.PORT}
   📡 Environment: ${config.NODE_ENV}
-  🏥 Health Check: http://localhost:${config.PORT}/api/v1/health
+  🏥 Root Health Check:   http://localhost:${config.PORT}/health
+  🏥 API v1 Health Check: http://localhost:${config.PORT}${config.API_PREFIX}/health
   ======================================================
   `);
 });
