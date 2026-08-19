@@ -14,6 +14,7 @@ import { loanTermsRoutes } from './modules/loan-terms';
 import { bankAccountRoutes } from './modules/bank-account';
 import { declarationRoutes } from './modules/declaration';
 import { selfieRoutes } from './modules/selfie';
+import { adminRoutes } from './modules/admin';
 import { requestLogger } from './shared/middleware/logger.middleware';
 import { errorHandler, notFoundHandler } from './shared/middleware/error.middleware';
 import { authLimiter } from './shared/middleware/rate-limit.middleware';
@@ -42,11 +43,13 @@ export const createApp = (): Application => {
   app.use(cookieParser() as any);
   app.use(passport.initialize() as any);
 
-  // Custom Request Logger
+  // Request Logging
   app.use(requestLogger());
 
-  // Static File Uploads Endpoint
-  const uploadsDir = path.resolve(__dirname, '../../uploads');
+  // Static uploads directory
+  const uploadsDir = path.isAbsolute(config.UPLOAD_DIR)
+    ? config.UPLOAD_DIR
+    : path.resolve(process.cwd(), config.UPLOAD_DIR);
   app.use('/uploads', express.static(uploadsDir));
 
   // Direct Health check endpoint
@@ -72,6 +75,7 @@ export const createApp = (): Application => {
           apiV1BankAccount: `${config.API_PREFIX}/bank-account`,
           apiV1Declaration: `${config.API_PREFIX}/declaration`,
           apiV1Selfie: `${config.API_PREFIX}/selfie`,
+          apiV1Admin: `${config.API_PREFIX}/admin`,
           uploads: '/uploads',
         },
       },
@@ -90,6 +94,7 @@ export const createApp = (): Application => {
   apiV1Router.use('/bank-account', bankAccountRoutes);
   apiV1Router.use('/declaration', declarationRoutes);
   apiV1Router.use('/selfie', selfieRoutes);
+  apiV1Router.use('/admin', adminRoutes);
 
   app.use(config.API_PREFIX, apiV1Router);
 
