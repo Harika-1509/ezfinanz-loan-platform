@@ -20,6 +20,55 @@ export class AppError extends Error {
     Object.setPrototypeOf(this, new.target.prototype);
     Error.captureStackTrace(this, this.constructor);
   }
+
+  // Static Factory Helpers
+  static badRequest(
+    message: string = 'Bad request',
+    details?: any,
+    errorCode: string = 'BAD_REQUEST'
+  ): BadRequestError {
+    return new BadRequestError(message, errorCode, details);
+  }
+
+  static unauthorized(
+    message: string = 'Unauthorized',
+    details?: any,
+    errorCode: string = 'UNAUTHORIZED'
+  ): UnauthorizedError {
+    return new UnauthorizedError(message, errorCode, details);
+  }
+
+  static forbidden(
+    message: string = 'Forbidden',
+    details?: any,
+    errorCode: string = 'FORBIDDEN'
+  ): ForbiddenError {
+    return new ForbiddenError(message, errorCode, details);
+  }
+
+  static notFound(
+    message: string = 'Resource not found',
+    details?: any,
+    errorCode: string = 'NOT_FOUND'
+  ): NotFoundError {
+    return new NotFoundError(message, errorCode, details);
+  }
+
+  static conflict(
+    message: string = 'Conflict detected',
+    details?: any,
+    errorCode: string = 'CONFLICT'
+  ): ConflictError {
+    return new ConflictError(message, errorCode, details);
+  }
+
+  static validation(
+    message: string = 'Validation failed',
+    details?: any,
+    errorCode: string = 'VALIDATION_ERROR'
+  ): ValidationError {
+    return new ValidationError(message, details, errorCode);
+  }
 }
 
 export class BadRequestError extends AppError {

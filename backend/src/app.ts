@@ -1,4 +1,5 @@
 import express, { Application } from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config';
@@ -11,7 +12,11 @@ export const createApp = (): Application => {
   const app = express();
 
   // Core Security & Utilities
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    })
+  );
   app.use(
     cors({
       origin: config.CORS_ORIGIN,
@@ -23,6 +28,10 @@ export const createApp = (): Application => {
 
   // Custom Request Logger
   app.use(requestLogger());
+
+  // Static File Uploads Endpoint
+  const uploadsDir = path.resolve(__dirname, '../../uploads');
+  app.use('/uploads', express.static(uploadsDir));
 
   // Direct Health check endpoint
   app.use('/health', healthRoutes);
@@ -39,6 +48,7 @@ export const createApp = (): Application => {
           health: '/health',
           apiV1: config.API_PREFIX,
           apiV1Health: `${config.API_PREFIX}/health`,
+          uploads: '/uploads',
         },
       },
       'Welcome to EZFinanz Loan Platform API'

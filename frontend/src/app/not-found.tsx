@@ -17,7 +17,8 @@ export default function NotFound() {
               Page Not Found
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              The loan application page or resource you are looking for does not exist or has been moved.
+              The loan application page or resource you are looking for does not exist or has been
+              moved.
             </p>
           </div>
 
