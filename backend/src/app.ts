@@ -9,6 +9,7 @@ import healthRoutes from './modules/health/health.routes';
 import { authRoutes } from './modules/auth';
 import { verificationRoutes } from './modules/verification';
 import { kycRoutes } from './modules/kyc';
+import { eligibilityRoutes } from './modules/eligibility';
 import { requestLogger } from './shared/middleware/logger.middleware';
 import { errorHandler, notFoundHandler } from './shared/middleware/error.middleware';
 import { authLimiter } from './shared/middleware/rate-limit.middleware';
@@ -62,6 +63,7 @@ export const createApp = (): Application => {
           apiV1Auth: `${config.API_PREFIX}/auth`,
           apiV1Verification: `${config.API_PREFIX}/verification`,
           apiV1Kyc: `${config.API_PREFIX}/kyc`,
+          apiV1Eligibility: `${config.API_PREFIX}/eligibility`,
           uploads: '/uploads',
         },
       },
@@ -75,6 +77,7 @@ export const createApp = (): Application => {
   apiV1Router.use('/auth', authLimiter as any, authRoutes);
   apiV1Router.use('/verification', verificationRoutes);
   apiV1Router.use('/kyc', kycRoutes);
+  apiV1Router.use('/eligibility', eligibilityRoutes);
 
   app.use(config.API_PREFIX, apiV1Router);
 

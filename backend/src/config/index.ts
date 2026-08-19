@@ -5,9 +5,12 @@ import { z } from 'zod';
 // Load .env file from backend root directory
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+// Preserve test environment when running vitest
+const isTestEnv = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+
 const envSchema = z.object({
   PORT: z.string().default('5000').transform(Number),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default(isTestEnv ? 'test' : 'development'),
   DATABASE_URL: z
     .string()
     .default('postgresql://postgres:postgres@localhost:5432/ezfinanz?schema=public'),
@@ -23,7 +26,12 @@ const envSchema = z.object({
 
 export type Config = z.infer<typeof envSchema>;
 
-const parsedEnv = envSchema.safeParse(process.env);
+const rawEnv = {
+  ...process.env,
+  NODE_ENV: isTestEnv ? 'test' : (process.env.NODE_ENV || 'development'),
+};
+
+const parsedEnv = envSchema.safeParse(rawEnv);
 
 if (!parsedEnv.success) {
   console.error(
