@@ -13,8 +13,8 @@ export const otpSendLimiter = rateLimit({
   legacyHeaders: false,
   skip: () => config.NODE_ENV === 'test',
   handler: (_req, res) => {
-    return sendError(
-      res,
+    sendError(
+      res as any,
       'Too many OTP requests from this IP address. Please wait 10 minutes before requesting another OTP.',
       429,
       'RATE_LIMIT_EXCEEDED'
@@ -33,8 +33,8 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   skip: () => config.NODE_ENV === 'test',
   handler: (_req, res) => {
-    return sendError(
-      res,
+    sendError(
+      res as any,
       'Too many authentication attempts from this IP address. Please try again after 15 minutes.',
       429,
       'RATE_LIMIT_EXCEEDED'

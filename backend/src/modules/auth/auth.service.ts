@@ -12,6 +12,8 @@ export interface SanitizedUser {
   role: Role;
   emailVerified: boolean;
   phoneVerified: boolean;
+  oauthProvider: string | null;
+  oauthId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +25,13 @@ export interface AuthResult {
   refreshToken: string;
 }
 
+export interface OAuthProfileInput {
+  googleId: string;
+  email: string;
+  name?: string;
+  avatarUrl?: string;
+}
+
 export class AuthService {
   private sanitizeUser(user: User): SanitizedUser {
     return {
@@ -32,6 +41,8 @@ export class AuthService {
       role: user.role,
       emailVerified: user.emailVerified,
       phoneVerified: user.phoneVerified,
+      oauthProvider: user.oauthProvider,
+      oauthId: user.oauthId,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -79,33 +90,36 @@ export class AuthService {
         },
       });
 
-      const newApp = await tx.application.create({
+      const newApplication = await tx.application.create({
         data: {
           userId: newUser.id,
           stage: ApplicationStage.SIGNUP_COMPLETED,
         },
       });
 
-      return { user: newUser, application: newApp };
+      return { user: newUser, application: newApplication };
     });
 
-    // 5. Generate JWT Access and Refresh Tokens
-    const tokenPayload = {
+    // 5. Generate JWT tokens
+    const accessToken = generateAccessToken({
       userId: user.id,
       email: user.email,
-      phone: user.phone,
       role: user.role,
-    };
+    });
 
-    const accessToken = generateAccessToken(tokenPayload);
-    const refreshToken = generateRefreshToken(tokenPayload);
+    const refreshToken = generateRefreshToken({
+      userId: user.id,
+    });
 
-    // 6. Save Refresh Token in Database (expires in 30 days)
+    // 6. Store hashed/persisted refresh token in database (30 day TTL)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
     await prisma.refreshToken.create({
       data: {
-        token: refreshToken,
         userId: user.id,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        token: refreshToken,
+        expiresAt,
       },
     });
 
@@ -119,12 +133,12 @@ export class AuthService {
 
   /**
    * User Login
-   * Verifies email & password, issues short-lived access token and refresh token.
+   * Verifies email + password, issues JWT access token and rotating refresh token.
    */
   public async login(input: LoginInput): Promise<AuthResult> {
     const email = input.email.trim().toLowerCase();
 
-    // 1. Retrieve user by email
+    // 1. Fetch user by email
     const user = await prisma.user.findUnique({
       where: { email },
     });
@@ -133,45 +147,38 @@ export class AuthService {
       throw AppError.unauthorized('Invalid email or password.');
     }
 
-    // 2. Validate password
+    // 2. Compare password against hash
     const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash);
     if (!isPasswordValid) {
       throw AppError.unauthorized('Invalid email or password.');
     }
 
-    // 3. Find most recent loan application
-    let application = await prisma.application.findFirst({
+    // 3. Fetch active loan application
+    const application = await prisma.application.findFirst({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
     });
 
-    // If customer has no application, create one
-    if (!application && user.role === Role.CUSTOMER) {
-      application = await prisma.application.create({
-        data: {
-          userId: user.id,
-          stage: ApplicationStage.SIGNUP_COMPLETED,
-        },
-      });
-    }
-
-    // 4. Generate Tokens
-    const tokenPayload = {
+    // 4. Generate JWT access and refresh tokens
+    const accessToken = generateAccessToken({
       userId: user.id,
       email: user.email,
-      phone: user.phone,
       role: user.role,
-    };
+    });
 
-    const accessToken = generateAccessToken(tokenPayload);
-    const refreshToken = generateRefreshToken(tokenPayload);
+    const refreshToken = generateRefreshToken({
+      userId: user.id,
+    });
 
-    // 5. Persist Refresh Token
+    // 5. Save refresh token in database
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
     await prisma.refreshToken.create({
       data: {
-        token: refreshToken,
         userId: user.id,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        token: refreshToken,
+        expiresAt,
       },
     });
 
@@ -184,8 +191,116 @@ export class AuthService {
   }
 
   /**
-   * Refresh Token Endpoint
-   * Rotates refresh tokens and issues fresh access token.
+   * Google / OAuth User Login & Registration Flow
+   * Handles first-time auto-registration (with emailVerified = true) or returning login.
+   */
+  public async handleOAuthLogin(profile: OAuthProfileInput): Promise<AuthResult> {
+    const email = profile.email.trim().toLowerCase();
+    const googleId = profile.googleId.trim();
+
+    // 1. Check if user exists by oauthId or by email
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [{ oauthProvider: 'google', oauthId: googleId }, { email }],
+      },
+    });
+
+    let application: Application | null = null;
+
+    if (!user) {
+      // First-time OAuth login: Auto-create User (emailVerified = true) and Application
+      const result = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email,
+            emailVerified: true, // Google verifies user email
+            phoneVerified: false,
+            oauthProvider: 'google',
+            oauthId: googleId,
+            role: Role.CUSTOMER,
+          },
+        });
+
+        const newApp = await tx.application.create({
+          data: {
+            userId: newUser.id,
+            stage: ApplicationStage.SIGNUP_COMPLETED,
+          },
+        });
+
+        return { user: newUser, application: newApp };
+      });
+
+      user = result.user;
+      application = result.application;
+    } else {
+      // Returning user: Ensure oauth link is updated and email is marked verified
+      const updateData: { oauthProvider?: string; oauthId?: string; emailVerified?: boolean } = {};
+      if (!user.oauthId || user.oauthProvider !== 'google') {
+        updateData.oauthProvider = 'google';
+        updateData.oauthId = googleId;
+      }
+      if (!user.emailVerified) {
+        updateData.emailVerified = true;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: updateData,
+        });
+      }
+
+      // Fetch active application
+      application = await prisma.application.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!application) {
+        application = await prisma.application.create({
+          data: {
+            userId: user.id,
+            stage: ApplicationStage.SIGNUP_COMPLETED,
+          },
+        });
+      }
+    }
+
+    // 2. Generate tokens
+    const accessToken = generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const refreshToken = generateRefreshToken({
+      userId: user.id,
+    });
+
+    // 3. Save refresh token in DB
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    await prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        token: refreshToken,
+        expiresAt,
+      },
+    });
+
+    return {
+      user: this.sanitizeUser(user),
+      application,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  /**
+   * Token Refresh
+   * Validates refresh token from cookie/body, rotates token in DB, and returns new access token.
    */
   public async refreshToken(
     rawToken: string
@@ -208,30 +323,33 @@ export class AuthService {
       if (storedToken) {
         await prisma.refreshToken.delete({ where: { id: storedToken.id } });
       }
-      throw AppError.unauthorized('Refresh token is invalid or expired. Please sign in again.');
+      throw AppError.unauthorized('Invalid or expired refresh token. Please log in again.');
     }
 
     const user = storedToken.user;
 
-    // 3. Rotate tokens: Generate new Access + Refresh tokens
-    const tokenPayload = {
+    // 3. Generate new access token & rotating refresh token
+    const newAccessToken = generateAccessToken({
       userId: user.id,
       email: user.email,
-      phone: user.phone,
       role: user.role,
-    };
+    });
 
-    const newAccessToken = generateAccessToken(tokenPayload);
-    const newRefreshToken = generateRefreshToken(tokenPayload);
+    const newRefreshToken = generateRefreshToken({
+      userId: user.id,
+    });
 
-    // 4. Atomic token rotation in DB
+    // 4. Atomic token rotation: Delete old token, insert new token
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
     await prisma.$transaction([
       prisma.refreshToken.delete({ where: { id: storedToken.id } }),
       prisma.refreshToken.create({
         data: {
-          token: newRefreshToken,
           userId: user.id,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          token: newRefreshToken,
+          expiresAt,
         },
       }),
     ]);
@@ -244,46 +362,42 @@ export class AuthService {
   }
 
   /**
-   * User Logout
-   * Removes refresh token from database.
+   * Invalidate Refresh Token on Logout
    */
   public async logout(rawToken?: string): Promise<void> {
-    if (rawToken) {
+    if (!rawToken) return;
+
+    try {
       await prisma.refreshToken.deleteMany({
         where: { token: rawToken },
       });
+    } catch {
+      // Silent catch - logout should always succeed on client
     }
   }
 
   /**
-   * Get Current Authenticated User Profile & Active Loan Application
+   * Get authenticated user profile with active loan application
    */
-  public async getMe(userId: string) {
+  public async getMe(
+    userId: string
+  ): Promise<{ user: SanitizedUser; application: Application | null }> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        applications: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          include: {
-            kycDetails: true,
-            eligibilityCheck: true,
-            loanTerms: true,
-            bankAccount: true,
-            declaration: true,
-            selfie: true,
-          },
-        },
-      },
     });
 
     if (!user) {
-      throw AppError.notFound('User account not found.');
+      throw AppError.notFound('User not found.');
     }
+
+    const application = await prisma.application.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    });
 
     return {
       user: this.sanitizeUser(user),
-      application: user.applications[0] || null,
+      application,
     };
   }
 }

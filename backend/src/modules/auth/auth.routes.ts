@@ -1,24 +1,65 @@
 import { Router } from 'express';
+import passport from 'passport';
 import { authController } from './auth.controller';
 import { validate } from '../../shared/middleware/validate.middleware';
 import { authGuard } from '../../shared/middleware/auth.middleware';
-import { signupSchema, loginSchema, refreshTokenSchema } from './auth.schema';
+import { signupSchema, loginSchema, refreshTokenSchema, mockOAuthSchema } from './auth.schema';
+import config from '../../config';
+import { sendError } from '../../shared/utils/api-response';
 
 const router = Router();
 
-// Public routes
+// Public Authentication Routes
 router.post('/signup', validate(signupSchema), (req, res, next) =>
   authController.signup(req, res, next)
 );
+
 router.post('/login', validate(loginSchema), (req, res, next) =>
   authController.login(req, res, next)
 );
+
 router.post('/refresh', validate(refreshTokenSchema), (req, res, next) =>
   authController.refreshToken(req, res, next)
 );
+
 router.post('/logout', (req, res, next) => authController.logout(req, res, next));
 
-// Protected routes
+// Google OAuth 2.0 Endpoints
+router.get('/google', (req, res, next) => {
+  if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
+    return sendError(
+      res,
+      'Google OAuth credentials not configured in backend environment. Use POST /api/v1/auth/google/mock for local testing.',
+      501,
+      'OAUTH_NOT_CONFIGURED'
+    );
+  }
+  return passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    session: false,
+  })(req, res, next);
+});
+
+router.get(
+  '/google/callback',
+  (req, res, next) => {
+    if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
+      return res.redirect(`${config.FRONTEND_URL}/login?error=OAUTH_NOT_CONFIGURED`);
+    }
+    return passport.authenticate('google', {
+      session: false,
+      failureRedirect: `${config.FRONTEND_URL}/login?error=OAUTH_FAILED`,
+    })(req, res, next);
+  },
+  (req, res, next) => authController.googleCallback(req, res, next)
+);
+
+// Mocked OAuth Exchange Endpoint for automated integration tests & local testing
+router.post('/google/mock', validate(mockOAuthSchema), (req, res, next) =>
+  authController.googleMock(req, res, next)
+);
+
+// Protected Authentication Profile
 router.get('/me', authGuard, (req, res, next) => authController.getMe(req, res, next));
 
 export default router;

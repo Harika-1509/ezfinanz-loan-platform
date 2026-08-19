@@ -2,12 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken, TokenPayload } from '../utils/jwt';
 import { AppError } from '../utils/app-error';
 
-// Augment Express Request interface with authenticated user payload
+// Augment Express User interface so Passport and Express both use TokenPayload
 declare global {
   namespace Express {
-    interface Request {
-      user?: TokenPayload;
-    }
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    interface User extends TokenPayload {}
   }
 }
 

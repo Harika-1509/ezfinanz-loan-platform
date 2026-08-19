@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { authService } from './auth.service';
+import { authService, AuthResult } from './auth.service';
 import { sendSuccess } from '../../shared/utils/api-response';
 import config from '../../config';
 
@@ -55,6 +55,56 @@ export class AuthController {
           accessToken: result.accessToken,
         },
         'Login successful.'
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/v1/auth/google/callback
+   * Live Passport.js callback handler
+   */
+  public async googleCallback(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const authResult = (req as any).user as AuthResult;
+
+    if (!authResult || !authResult.accessToken) {
+      return res.redirect(`${config.FRONTEND_URL}/login?error=OAUTH_FAILED`);
+    }
+
+    // Set httpOnly refresh token cookie
+    res.cookie('refreshToken', authResult.refreshToken, REFRESH_COOKIE_OPTIONS);
+
+    // Redirect to frontend callback route with accessToken
+    return res.redirect(
+      `${config.FRONTEND_URL}/auth/callback?token=${encodeURIComponent(authResult.accessToken)}`
+    );
+  }
+
+  /**
+   * POST /api/v1/auth/google/mock
+   * Mocked OAuth provider route for testing & local development
+   */
+  public async googleMock(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { googleId, email, name } = req.body;
+      const result = await authService.handleOAuthLogin({
+        googleId,
+        email,
+        name,
+      });
+
+      // Set httpOnly refresh token cookie
+      res.cookie('refreshToken', result.refreshToken, REFRESH_COOKIE_OPTIONS);
+
+      sendSuccess(
+        res,
+        {
+          user: result.user,
+          application: result.application,
+          accessToken: result.accessToken,
+        },
+        'Google OAuth login successful.'
       );
     } catch (error) {
       next(error);

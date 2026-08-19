@@ -55,3 +55,17 @@ export const refreshTokenSchema = {
     refreshToken: z.string().optional(),
   }),
 };
+
+export const mockOAuthSchema = {
+  body: z.object({
+    googleId: z.string({ required_error: 'Google ID is required' }).min(1),
+    email: z
+      .string({ required_error: 'Email is required' })
+      .trim()
+      .toLowerCase()
+      .email('Please provide a valid email address'),
+    name: z.string().optional(),
+  }),
+};
+
+export type MockOAuthInput = z.infer<typeof mockOAuthSchema.body>;

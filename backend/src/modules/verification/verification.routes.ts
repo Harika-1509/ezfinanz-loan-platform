@@ -15,21 +15,29 @@ router.use(authGuard);
 
 router.post(
   '/email/send',
-  otpSendLimiter,
+  otpSendLimiter as any,
   validate(sendEmailOtpSchema),
   verificationController.sendEmailOtp
 );
 
-router.post('/email/verify', validate(verifyEmailOtpSchema), verificationController.verifyEmailOtp);
+router.post(
+  '/email/verify',
+  validate(verifyEmailOtpSchema),
+  verificationController.verifyEmailOtp
+);
 
 router.post(
   '/phone/send',
-  otpSendLimiter,
+  otpSendLimiter as any,
   validate(sendPhoneOtpSchema),
   verificationController.sendPhoneOtp
 );
 
-router.post('/phone/verify', validate(verifyPhoneOtpSchema), verificationController.verifyPhoneOtp);
+router.post(
+  '/phone/verify',
+  validate(verifyPhoneOtpSchema),
+  verificationController.verifyPhoneOtp
+);
 
 router.get('/status', verificationController.getStatus);
 

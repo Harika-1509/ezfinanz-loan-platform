@@ -3,6 +3,7 @@ import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import passport, { configurePassport } from './config/passport';
 import { config } from './config';
 import healthRoutes from './modules/health/health.routes';
 import { authRoutes } from './modules/auth';
@@ -15,21 +16,25 @@ import { sendSuccess } from './shared/utils/api-response';
 export const createApp = (): Application => {
   const app = express();
 
+  // Initialize Passport configuration
+  configurePassport();
+
   // Core Security & Utilities
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
-    })
+    }) as any
   );
   app.use(
     cors({
       origin: config.CORS_ORIGIN,
       credentials: true,
-    })
+    }) as any
   );
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-  app.use(cookieParser());
+  app.use(cookieParser() as any);
+  app.use(passport.initialize() as any);
 
   // Custom Request Logger
   app.use(requestLogger());
@@ -65,7 +70,7 @@ export const createApp = (): Application => {
   // API v1 Routes
   const apiV1Router = express.Router();
   apiV1Router.use('/health', healthRoutes);
-  apiV1Router.use('/auth', authLimiter, authRoutes);
+  apiV1Router.use('/auth', authLimiter as any, authRoutes);
   apiV1Router.use('/verification', verificationRoutes);
 
   app.use(config.API_PREFIX, apiV1Router);

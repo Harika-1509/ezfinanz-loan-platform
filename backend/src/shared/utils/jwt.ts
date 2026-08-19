@@ -10,6 +10,11 @@ export interface TokenPayload {
   role: Role;
 }
 
+export interface RefreshTokenPayload {
+  userId: string;
+  role?: Role;
+}
+
 /**
  * Sign an Access Token (default expires in config.JWT_EXPIRES_IN e.g. 7d)
  */
@@ -22,7 +27,7 @@ export function generateAccessToken(payload: TokenPayload): string {
 /**
  * Sign a Refresh Token (expires in 30d)
  */
-export function generateRefreshToken(payload: TokenPayload): string {
+export function generateRefreshToken(payload: RefreshTokenPayload): string {
   return jwt.sign(payload, config.JWT_SECRET, {
     expiresIn: '30d',
   });
