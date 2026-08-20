@@ -134,6 +134,42 @@ export default function ApplyPage() {
 
         {/* Dynamic Stage Render Area */}
         <div className="pt-2">
+          {/* Stage 0: Verification / Welcome Card */}
+          {(currentStage === 'SIGNUP_COMPLETED' || currentStage === 'VERIFICATION_PENDING') && (
+            <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 p-6 sm:p-8 rounded-3xl shadow-fintech dark:border-emerald-900/40 dark:from-slate-900 dark:to-slate-950">
+              <div className="max-w-2xl mx-auto text-center space-y-4">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md">
+                  <ShieldCheck className="h-7 w-7" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                  Welcome to Your Loan Application
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                  Your account is registered! Proceed to fill out your Government KYC details or verify your contact credentials.
+                </p>
+                <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+                  <Button
+                    onClick={() => {
+                      setCurrentStage('KYC_PENDING');
+                      updateApplicationStage('KYC_PENDING');
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-11 px-6 rounded-xl shadow-md cursor-pointer"
+                  >
+                    <span>Start Step 2: Fill KYC Details</span>
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/verify')}
+                    className="border-slate-300 dark:border-slate-700 text-xs font-semibold h-11 px-5 rounded-xl cursor-pointer"
+                  >
+                    <span>2FA Verification Screen</span>
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Stage 1: KYC Form (Step 2 of 8) */}
           {currentStage === 'KYC_PENDING' && (
             <KycForm

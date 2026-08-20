@@ -219,7 +219,7 @@ export class AuthService {
           role: Role.CUSTOMER,
           applications: {
             create: {
-              stage: ApplicationStage.SIGNUP_COMPLETED,
+              stage: ApplicationStage.KYC_PENDING,
             },
           },
         },
@@ -258,8 +258,13 @@ export class AuthService {
         application = await prisma.application.create({
           data: {
             userId: user.id,
-            stage: ApplicationStage.SIGNUP_COMPLETED,
+            stage: ApplicationStage.KYC_PENDING,
           },
+        });
+      } else if (application.stage === ApplicationStage.SIGNUP_COMPLETED) {
+        application = await prisma.application.update({
+          where: { id: application.id },
+          data: { stage: ApplicationStage.KYC_PENDING },
         });
       }
     }
