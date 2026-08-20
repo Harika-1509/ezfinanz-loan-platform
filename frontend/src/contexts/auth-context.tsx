@@ -66,6 +66,11 @@ export interface AuthContextType {
   refreshSession: () => Promise<boolean>;
   checkAuth: () => Promise<void>;
   updateApplicationStage: (newStage: ApplicationStage) => void;
+  setSession: (
+    user: User | null,
+    application: Application | null,
+    accessToken?: string | null
+  ) => void;
   setMockSession: (
     user: User | null,
     application: Application | null
@@ -261,6 +266,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
+   * Real authenticated session setter
+   */
+  const setSession = useCallback(
+    (userData: User | null, appData: Application | null, token?: string | null) => {
+      setUser(userData);
+      setApplication(appData);
+      setAccessTokenState(token || null);
+      if (token) {
+        apiClient.setAccessToken(token);
+      } else {
+        apiClient.clearAccessToken();
+      }
+    },
+    []
+  );
+
+  /**
    * Mock session helper for UI development / preview testing
    */
   const setMockSession = useCallback(
@@ -292,6 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshSession,
         checkAuth,
         updateApplicationStage,
+        setSession,
         setMockSession,
       }}
     >

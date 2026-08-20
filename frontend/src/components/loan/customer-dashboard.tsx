@@ -141,7 +141,7 @@ export function CustomerDashboard({
 }: {
   onNavigateToStage?: (stage: ApplicationStage) => void;
 }) {
-  const { user, application: authApp, updateApplicationStage } = useAuth();
+  const { user, application: authApp, updateApplicationStage, refreshSession } = useAuth();
   const router = useRouter();
 
   const [application, setApplication] = useState<ApplicationData | null>(null);
@@ -215,6 +215,19 @@ export function CustomerDashboard({
     }
   }, [authApp?.stage, updateApplicationStage]);
 
+  const handleRefreshAndReload = async () => {
+    setIsRefreshing(true);
+    setError(null);
+    try {
+      await refreshSession();
+      await fetchApplicationDetails(false);
+    } catch {
+      setError('Session expired. Please sign in again.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     fetchApplicationDetails();
   }, [fetchApplicationDetails]);
@@ -276,18 +289,24 @@ export function CustomerDashboard({
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button
-              onClick={async () => {
-                await fetchApplicationDetails();
-              }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md"
+              onClick={handleRefreshAndReload}
+              disabled={isRefreshing}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md cursor-pointer"
             >
-              <RefreshCw className="mr-2 h-3.5 w-3.5" />
-              Refresh Dashboard
+              <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh Dashboard'}
+            </Button>
+            <Button
+              onClick={() => router.push('/apply')}
+              className="bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md cursor-pointer"
+            >
+              <span>Continue Application</span>
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
             </Button>
             <Button
               variant="outline"
               onClick={() => router.push('/login')}
-              className="text-xs font-bold px-5 py-2.5 rounded-xl border-slate-300 dark:border-slate-700"
+              className="text-xs font-bold px-5 py-2.5 rounded-xl border-slate-300 dark:border-slate-700 cursor-pointer"
             >
               Sign In Again
             </Button>

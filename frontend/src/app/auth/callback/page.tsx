@@ -9,7 +9,7 @@ import { apiClient } from '../../../lib/api-client';
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setMockSession } = useAuth();
+  const { setSession } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,12 +20,20 @@ function AuthCallbackContent() {
           apiClient.setAccessToken(token);
         }
 
-        // Fetch authenticated user profile & active application
+        // Fetch authenticated user profile & active application with real JWT token
         const meRes = await apiClient.get<{ user: any; application: any }>('/auth/me');
         if (meRes.data?.user) {
-          setMockSession(meRes.data.user, meRes.data.application || null);
-          if (meRes.data.user.role === 'ADMIN') {
+          const authenticatedUser = meRes.data.user;
+          const activeApp = meRes.data.application || null;
+
+          // Store real session & access token
+          setSession(authenticatedUser, activeApp, token);
+
+          if (authenticatedUser.role === 'ADMIN') {
             router.push('/admin');
+          } else if (!authenticatedUser.phoneVerified) {
+            // Treat all customers equally: Direct to 2-step verification to complete mobile OTP
+            router.push('/verify');
           } else {
             router.push('/apply');
           }
@@ -39,7 +47,7 @@ function AuthCallbackContent() {
     };
 
     handleOAuthCallback();
-  }, [searchParams, setMockSession, router]);
+  }, [searchParams, setSession, router]);
 
   if (error) {
     return (
