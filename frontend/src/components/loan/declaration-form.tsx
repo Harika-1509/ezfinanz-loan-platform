@@ -197,60 +197,68 @@ export function DeclarationForm({ onSuccess, onBack }: DeclarationFormProps) {
           )}
 
           {/* Key Loan & Bank Summary Grid */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Sanctioned Amount */}
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4.5 dark:border-slate-800 dark:bg-slate-900/50">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Sanctioned Principal
-              </span>
-              <div className="mt-1 text-xl font-black text-slate-900 dark:text-white tabular-nums">
-                {formatCurrency(declaration?.loanSummary?.sanctionedAmount)}
-              </div>
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                {declaration?.loanSummary?.tenureMonths} Monthly Instalments
-              </span>
-            </div>
-
-            {/* Monthly EMI */}
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4.5 dark:border-emerald-900/40 dark:bg-emerald-950/20">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                Monthly EMI
-              </span>
-              <div className="mt-1 text-xl font-black text-emerald-800 dark:text-emerald-300 tabular-nums">
-                {formatCurrency(declaration?.loanSummary?.emi)}
-              </div>
-              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                @ {declaration?.loanSummary?.interestRate}% p.a. (IRR: {declaration?.loanSummary?.irr}%)
-              </span>
-            </div>
-
-            {/* Net Disbursement */}
-            <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-4.5 dark:border-teal-900/40 dark:bg-teal-950/20">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">
-                Net Disbursement
-              </span>
-              <div className="mt-1 text-xl font-black text-teal-800 dark:text-teal-300 tabular-nums">
-                {formatCurrency(declaration?.loanSummary?.netDisbursement)}
-              </div>
-              <span className="text-[11px] font-bold text-teal-600 dark:text-teal-400">
-                After ₹{declaration?.loanSummary?.totalCharges.toLocaleString('en-IN')} deductions
-              </span>
-            </div>
-
-            {/* Disbursement Bank */}
-            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4.5 dark:border-slate-800 dark:bg-slate-900/50">
-              <div className="flex items-center justify-between">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
+            {/* 1. Sanctioned Amount */}
+            <div className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4.5 shadow-xs dark:border-slate-800 dark:bg-slate-900/80">
+              <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Target Account
+                  Sanctioned Principal
                 </span>
-                <Landmark className="h-4 w-4 text-slate-400" />
+                <div className="mt-1 text-2xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
+                  {formatCurrency(declaration?.loanSummary?.sanctionedAmount)}
+                </div>
               </div>
-              <div className="mt-1 text-sm font-black text-slate-900 dark:text-white truncate">
-                {declaration?.disbursementBank?.bankName || 'Linked Bank Account'}
+              <div className="mt-2 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                {declaration?.loanSummary?.tenureMonths} Monthly Instalments
               </div>
-              <span className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400">
+            </div>
+
+            {/* 2. Monthly EMI */}
+            <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4.5 shadow-xs dark:border-emerald-900/40 dark:bg-emerald-950/20">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                  Monthly EMI
+                </span>
+                <div className="mt-1 text-2xl font-black text-emerald-700 dark:text-emerald-300 tabular-nums tracking-tight">
+                  {formatCurrency(declaration?.loanSummary?.emi)}
+                </div>
+              </div>
+              <div className="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                @ {declaration?.loanSummary?.interestRate}% p.a. (IRR: {declaration?.loanSummary?.irr}%)
+              </div>
+            </div>
+
+            {/* 3. Net Disbursement */}
+            <div className="flex flex-col justify-between rounded-2xl border border-teal-200 bg-teal-50/50 p-4.5 shadow-xs dark:border-teal-900/40 dark:bg-teal-950/20">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">
+                  Net Disbursement
+                </span>
+                <div className="mt-1 text-2xl font-black text-teal-700 dark:text-teal-300 tabular-nums tracking-tight">
+                  {formatCurrency(declaration?.loanSummary?.netDisbursement)}
+                </div>
+              </div>
+              <div className="mt-2 text-[11px] font-semibold text-teal-600 dark:text-teal-400">
+                After ₹{declaration?.loanSummary?.totalCharges.toLocaleString('en-IN')} deductions
+              </div>
+            </div>
+
+            {/* 4. Disbursement Bank */}
+            <div className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4.5 shadow-xs dark:border-slate-800 dark:bg-slate-900/80">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Target Account
+                  </span>
+                  <Landmark className="h-4 w-4 text-slate-400" />
+                </div>
+                <div className="mt-1 text-base font-black text-slate-900 dark:text-white truncate">
+                  {declaration?.disbursementBank?.bankName || 'Linked Bank Account'}
+                </div>
+              </div>
+              <div className="mt-2 font-mono text-[11px] font-bold text-slate-600 dark:text-slate-400">
                 {declaration?.disbursementBank?.accountNumberMasked || 'XXXX-XXXX-0000'}
-              </span>
+              </div>
             </div>
           </div>
 
