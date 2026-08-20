@@ -73,11 +73,11 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
 
           setResult({
             decision: check.result,
-            creditScore: score,
+            creditScore: Number(score),
             creditBand: band,
-            dtiRatio: check.dtiRatio,
-            maxEligibleAmount: check.maxApprovedAmount,
-            interestRate: score >= 750 ? 12.5 : score >= 650 ? 14.5 : 16.5,
+            dtiRatio: Number(check.dtiRatio || 0),
+            maxEligibleAmount: Number(check.maxApprovedAmount || 0),
+            interestRate: Number(score) >= 750 ? 12.5 : Number(score) >= 650 ? 14.5 : 16.5,
           });
         }
       } catch {
@@ -433,7 +433,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
                   <div className="rounded-xl bg-white/95 p-3.5 dark:bg-slate-900/90 border border-emerald-100 dark:border-emerald-950 shadow-xs">
                     <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">DTI Ratio</p>
                     <p className="text-lg font-black text-teal-600 dark:text-teal-400 tabular-nums">
-                      {result.dtiRatio.toFixed(1)}%
+                      {Number(result.dtiRatio || 0).toFixed(1)}%
                     </p>
                   </div>
 
@@ -506,7 +506,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
                   <div className="rounded-xl bg-white/95 p-3.5 dark:bg-slate-900/90 border border-amber-100 dark:border-amber-950 shadow-xs">
                     <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">DTI Ratio</p>
                     <p className="text-lg font-black text-slate-800 dark:text-slate-200 tabular-nums">
-                      {result.dtiRatio.toFixed(1)}%
+                      {Number(result.dtiRatio || 0).toFixed(1)}%
                     </p>
                   </div>
 

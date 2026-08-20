@@ -292,10 +292,10 @@ export function LoanTermsCalculator({ onSuccess }: LoanTermsCalculatorProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-stretch">
         {/* Left Column: Interactive Loan Configuration (7 Cols) */}
-        <div className="space-y-6 lg:col-span-7">
-          <Card className="border-slate-200/80 shadow-fintech backdrop-blur-xl dark:border-slate-800/80">
+        <div className="lg:col-span-7 flex flex-col">
+          <Card className="flex-1 flex flex-col justify-between border-slate-200/80 shadow-fintech backdrop-blur-xl dark:border-slate-800/80 rounded-2xl">
             <CardHeader className="pb-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
@@ -463,9 +463,9 @@ export function LoanTermsCalculator({ onSuccess }: LoanTermsCalculatorProps) {
         </div>
 
         {/* Right Column: Live Breakdown Panel (5 Cols) */}
-        <div className="space-y-6 lg:col-span-5">
+        <div className="lg:col-span-5 flex flex-col">
           <Card
-            className="relative overflow-hidden border-emerald-600/30 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 text-white shadow-xl rounded-2xl"
+            className="flex-1 flex flex-col justify-between relative overflow-hidden border-emerald-600/30 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 text-white shadow-xl rounded-2xl"
             aria-live="polite"
           >
             {/* Subtle glowing orb background */}

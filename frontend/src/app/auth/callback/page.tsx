@@ -9,7 +9,7 @@ import { apiClient } from '../../../lib/api-client';
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { refreshSession, user } = useAuth();
+  const { setMockSession } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,10 +20,15 @@ function AuthCallbackContent() {
           apiClient.setAccessToken(token);
         }
 
-        // Revalidate current session
-        const success = await refreshSession();
-        if (success) {
-          router.push('/apply');
+        // Fetch authenticated user profile & active application
+        const meRes = await apiClient.get<{ user: any; application: any }>('/auth/me');
+        if (meRes.data?.user) {
+          setMockSession(meRes.data.user, meRes.data.application || null);
+          if (meRes.data.user.role === 'ADMIN') {
+            router.push('/admin');
+          } else {
+            router.push('/apply');
+          }
         } else {
           router.push('/login');
         }
@@ -34,7 +39,7 @@ function AuthCallbackContent() {
     };
 
     handleOAuthCallback();
-  }, [searchParams, refreshSession, router]);
+  }, [searchParams, setMockSession, router]);
 
   if (error) {
     return (
