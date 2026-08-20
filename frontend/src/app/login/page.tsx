@@ -196,8 +196,8 @@ export default function LoginPage() {
   };
 
   const fillAdminDemo = () => {
-    setEmail('admin@ezfinanz.com');
-    setPassword('AdminPassword@123');
+    setEmail('amujuriharika649@gmail.com');
+    setPassword('Harika@2005');
     setAuthMode('password');
     setFieldErrors({});
   };
