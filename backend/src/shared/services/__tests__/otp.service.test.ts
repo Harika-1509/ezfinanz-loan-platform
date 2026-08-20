@@ -38,7 +38,7 @@ describe('ProductionOtpService', () => {
 
     expect(result.identifier).toBe(testPhone);
     expect(result.expiresAt.getTime()).toBeGreaterThan(Date.now());
-    expect(result.cooldownSeconds).toBe(60);
+    expect(result.cooldownSeconds).toBe(10);
 
     // Verify DB record
     const dbRecord = await prisma.otpVerification.findFirst({
@@ -122,7 +122,7 @@ describe('ProductionOtpService', () => {
         enteredOtp: '000000',
         purpose: OtpPurpose.PHONE_VERIFICATION,
       })
-    ).rejects.toThrow(/4 attempts remaining/);
+    ).rejects.toThrow(/9 attempts remaining/);
 
     const dbRecord = await prisma.otpVerification.findFirst({
       where: {
@@ -135,7 +135,7 @@ describe('ProductionOtpService', () => {
     expect(dbRecord?.attempts).toBe(1);
   });
 
-  it('should lock out and invalidate after 5 failed attempts', async () => {
+  it('should lock out and invalidate after 10 failed attempts', async () => {
     const lockoutEmail = 'lockout_test@example.com';
     await otpService.generateAndSendOtp({
       identifier: lockoutEmail,
@@ -145,8 +145,8 @@ describe('ProductionOtpService', () => {
 
     const realOtp = otpService.getTestGeneratedOtp(lockoutEmail, OtpPurpose.LOGIN);
 
-    // Attempt 1 to 4: Failures with attempts remaining
-    for (let i = 1; i <= 4; i++) {
+    // Attempt 1 to 9: Failures with attempts remaining
+    for (let i = 1; i <= 9; i++) {
       await expect(
         otpService.verifyOtp({
           identifier: lockoutEmail,
@@ -156,14 +156,14 @@ describe('ProductionOtpService', () => {
       ).rejects.toThrow();
     }
 
-    // 5th attempt: Exceeds max attempts
+    // 10th attempt: Exceeds max attempts
     await expect(
       otpService.verifyOtp({
         identifier: lockoutEmail,
         enteredOtp: '111111',
         purpose: OtpPurpose.LOGIN,
       })
-    ).rejects.toThrow(/Maximum verification attempts exceeded/);
+    ).rejects.toThrow(/Maximum.*exceeded/);
 
     // Even with the correct OTP, verification is now rejected
     await expect(
@@ -172,7 +172,7 @@ describe('ProductionOtpService', () => {
         enteredOtp: realOtp!,
         purpose: OtpPurpose.LOGIN,
       })
-    ).rejects.toThrow(/No pending verification code found|Maximum verification attempts exceeded/);
+    ).rejects.toThrow(/Maximum.*exceeded|temporarily locked|No pending verification/);
 
     const dbRecord = await prisma.otpVerification.findFirst({
       where: {

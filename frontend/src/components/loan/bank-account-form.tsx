@@ -194,11 +194,11 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
 
   if (isLoading) {
     return (
-      <Card className="border-slate-200/80 shadow-glass">
+      <Card className="border-slate-200/80 shadow-fintech">
         <CardContent className="flex min-h-[340px] items-center justify-center p-8">
           <div className="text-center space-y-3">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-emerald-600" />
-            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+            <Loader2 className="mx-auto h-9 w-9 animate-spin text-emerald-600" />
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
               Loading bank account details...
             </p>
           </div>
@@ -211,7 +211,7 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
       {/* Left Column: Input Form (7 Cols) */}
       <div className="lg:col-span-7 space-y-6">
-        <Card className="border-slate-200/80 shadow-glass dark:border-slate-800">
+        <Card className="border-slate-200/80 shadow-fintech backdrop-blur-xl dark:border-slate-800/80">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
@@ -220,38 +220,38 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
                   Step 5 of 8: Disbursement Bank
                 </span>
               </div>
-              <Badge variant="outline" className="text-[10px] text-emerald-800 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-200 font-bold">
+              <Badge variant="outline" className="text-[10px] text-emerald-800 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-200 font-bold px-2.5 py-0.5">
                 Direct NEFT / RTGS
               </Badge>
             </div>
 
-            <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
+            <CardTitle className="text-xl font-extrabold text-slate-900 dark:text-white">
               Link Your Bank Account
             </CardTitle>
-            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Please provide the bank account where your loan funds will be directly disbursed.
             </CardDescription>
           </CardHeader>
 
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4.5">
               {error && (
-                <div role="alert" className="flex items-center space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200 font-medium">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-                  <span>{error}</span>
+                <div role="alert" className="flex items-start space-x-2.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200 font-medium animate-in fade-in-50">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
+                  <span className="font-bold">{error}</span>
                 </div>
               )}
 
               {isSuccess && (
-                <div role="status" className="flex items-center space-x-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200 font-bold">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                <div role="status" className="flex items-start space-x-2.5 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200 font-bold animate-in fade-in-50">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
                   <span>Bank account linked successfully! Proceeding to Legal Declaration...</span>
                 </div>
               )}
 
               {/* Account Holder Name */}
               <div className="space-y-1.5">
-                <Label htmlFor="holderName" required className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <Label htmlFor="holderName" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   Account Holder Name (as per Bank Records)
                 </Label>
                 <Input
@@ -263,17 +263,19 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
                       setFieldErrors((prev) => ({ ...prev, holderName: '' }));
                     }
                   }}
-                  error={fieldErrors.holderName}
-                  icon={<User className="h-4 w-4" />}
+                  error={Boolean(fieldErrors.holderName)}
                   placeholder="Full name as printed on bank passbook / statement"
                   disabled={isSubmitting || isSuccess}
                 />
+                {fieldErrors.holderName && (
+                  <p className="text-xs font-semibold text-rose-600">{fieldErrors.holderName}</p>
+                )}
               </div>
 
               {/* Account Number */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="accountNumber" required className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <Label htmlFor="accountNumber" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Bank Account Number
                   </Label>
                   <Input
@@ -287,16 +289,18 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
                         setFieldErrors((prev) => ({ ...prev, accountNumber: '' }));
                       }
                     }}
-                    error={fieldErrors.accountNumber}
-                    icon={<CreditCard className="h-4 w-4" />}
+                    error={Boolean(fieldErrors.accountNumber)}
                     placeholder="9 to 18 digits"
                     disabled={isSubmitting || isSuccess}
                   />
+                  {fieldErrors.accountNumber && (
+                    <p className="text-xs font-semibold text-rose-600">{fieldErrors.accountNumber}</p>
+                  )}
                 </div>
 
                 {/* Confirm Account Number */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="confirmAccountNumber" required className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <Label htmlFor="confirmAccountNumber" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Re-enter Account Number
                   </Label>
                   <Input
@@ -309,11 +313,13 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
                         setFieldErrors((prev) => ({ ...prev, confirmAccountNumber: '' }));
                       }
                     }}
-                    error={fieldErrors.confirmAccountNumber}
-                    icon={<CreditCard className="h-4 w-4" />}
+                    error={Boolean(fieldErrors.confirmAccountNumber)}
                     placeholder="Confirm account number"
                     disabled={isSubmitting || isSuccess}
                   />
+                  {fieldErrors.confirmAccountNumber && (
+                    <p className="text-xs font-semibold text-rose-600">{fieldErrors.confirmAccountNumber}</p>
+                  )}
                 </div>
               </div>
 
@@ -321,7 +327,7 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="ifsc" required className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <Label htmlFor="ifsc" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       Bank IFSC Code
                     </Label>
                     {detectedBank && (
@@ -334,17 +340,19 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
                     id="ifsc"
                     value={ifsc}
                     onChange={(e) => handleIfscChange(e.target.value)}
-                    error={fieldErrors.ifsc}
-                    icon={<Building2 className="h-4 w-4" />}
+                    error={Boolean(fieldErrors.ifsc)}
                     placeholder="e.g. HDFC0001234"
                     maxLength={11}
-                    className="font-mono uppercase"
+                    className="font-mono uppercase tracking-wider"
                     disabled={isSubmitting || isSuccess}
                   />
+                  {fieldErrors.ifsc && (
+                    <p className="text-xs font-semibold text-rose-600">{fieldErrors.ifsc}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="bankName" required className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <Label htmlFor="bankName" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Bank / Branch Name
                   </Label>
                   <Input
@@ -356,18 +364,21 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
                         setFieldErrors((prev) => ({ ...prev, bankName: '' }));
                       }
                     }}
-                    error={fieldErrors.bankName}
+                    error={Boolean(fieldErrors.bankName)}
                     placeholder="e.g. HDFC Bank Ltd - MG Road Branch"
                     disabled={isSubmitting || isSuccess}
                   />
+                  {fieldErrors.bankName && (
+                    <p className="text-xs font-semibold text-rose-600">{fieldErrors.bankName}</p>
+                  )}
                 </div>
               </div>
 
               {/* Security Assurance Note */}
-              <div className="flex items-start space-x-2 rounded-xl bg-slate-50 p-3 text-[11px] text-slate-600 dark:bg-slate-900/50 dark:text-slate-400 border border-slate-200/60 dark:border-slate-800">
+              <div className="flex items-start space-x-2.5 rounded-2xl bg-slate-50 p-3.5 text-xs text-slate-600 dark:bg-slate-900/50 dark:text-slate-400 border border-slate-200/60 dark:border-slate-800">
                 <Lock className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                 <span>
-                  Your bank details are encrypted using 256-bit SSL protocols. Funds will only be disbursed after legal declaration confirmation and admin verification.
+                  Your bank details are encrypted using 256-bit SSL protocols. Funds will only be disbursed after legal declaration confirmation and underwriter approval.
                 </span>
               </div>
             </CardContent>
@@ -380,7 +391,7 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
                   size="sm"
                   onClick={onBack}
                   disabled={isSubmitting || isSuccess}
-                  className="text-xs font-semibold"
+                  className="text-xs font-semibold rounded-xl"
                 >
                   <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
                   Back
@@ -392,7 +403,7 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
               <Button
                 type="submit"
                 disabled={isSubmitting || isSuccess}
-                className="bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-md shadow-emerald-500/20 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+                className="bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-md shadow-emerald-950/10 active:scale-[0.98] rounded-xl h-12"
               >
                 {isSubmitting ? (
                   <>
@@ -486,21 +497,21 @@ export function BankAccountForm({ onSuccess, onBack }: BankAccountFormProps) {
         </div>
 
         {/* Verification Checkpoint List */}
-        <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/60 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 text-xs dark:border-slate-800 dark:bg-slate-900/60 shadow-fintech">
           <span className="font-bold text-slate-800 dark:text-slate-200">
             Bank Verification Checklist:
           </span>
-          <ul className="mt-2 space-y-1.5 text-slate-600 dark:text-slate-300">
+          <ul className="mt-2.5 space-y-2 text-slate-600 dark:text-slate-300">
             <li className="flex items-center space-x-2">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
               <span>Must be a savings or current account in the applicant&apos;s name.</span>
             </li>
             <li className="flex items-center space-x-2">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
               <span>Account must be active and enabled for electronic fund transfer.</span>
             </li>
             <li className="flex items-center space-x-2">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
               <span>NRE/NRO accounts are not permitted under standard retail loan terms.</span>
             </li>
           </ul>

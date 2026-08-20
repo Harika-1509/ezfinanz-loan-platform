@@ -114,10 +114,14 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      await apiClient.post('/auth/otp/send', { phone, purpose: 'LOGIN' });
+      const res = await apiClient.post<any>('/auth/otp/send', { phone, purpose: 'LOGIN' });
       setOtpSent(true);
-      setCountdown(30);
-      setSuccessMessage('6-digit login OTP sent to your phone.');
+      setCountdown(10);
+      const msg = res.message || res.data?.message || '6-digit login OTP sent to your phone.';
+      setSuccessMessage(msg);
+      if (res.data?.devOtp) {
+        setOtp(res.data.devOtp);
+      }
     } catch (err) {
       const { fieldErrors: extractedFieldErrors, generalMessage } = extractFieldErrors(
         err,
@@ -205,23 +209,23 @@ export default function LoginPage() {
           {/* Brand Header */}
           <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2 group">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-900 via-teal-900 to-emerald-600 shadow-md transition-transform group-hover:scale-105">
+              <div className="flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-900 via-teal-900 to-emerald-600 shadow-md transition-transform group-hover:scale-105">
                 <Sparkles className="h-6 w-6 text-emerald-400" />
               </div>
             </Link>
             <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               Sign In to EZ<span className="text-emerald-600">Finanz</span>
             </h1>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 font-medium">
               Access your loan application or administrative review dashboard.
             </p>
           </div>
 
           {/* Main Card */}
-          <Card className="border-slate-200/80 shadow-glass backdrop-blur-md">
+          <Card className="border-slate-200/80 shadow-fintech backdrop-blur-xl rounded-3xl dark:border-slate-800/80">
             <CardHeader className="pb-4">
               {/* Mode Toggle Tabs */}
-              <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-slate-100 p-1.5 dark:bg-slate-800" role="tablist">
+              <div className="grid grid-cols-2 gap-1.5 rounded-2xl bg-slate-100 p-1.5 dark:bg-slate-800" role="tablist">
                 <button
                   type="button"
                   role="tab"
@@ -230,9 +234,9 @@ export default function LoginPage() {
                     setAuthMode('password');
                     setErrorMessage(null);
                   }}
-                  className={`inline-flex items-center justify-center rounded-lg py-2 px-3 text-xs font-bold transition-all min-h-[38px] leading-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 ${
+                  className={`inline-flex items-center justify-center rounded-xl py-2 px-3 text-xs font-bold transition-all min-h-[40px] leading-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 cursor-pointer ${
                     authMode === 'password'
-                      ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
+                      ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
                       : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
@@ -246,9 +250,9 @@ export default function LoginPage() {
                     setAuthMode('otp');
                     setErrorMessage(null);
                   }}
-                  className={`inline-flex items-center justify-center rounded-lg py-2 px-3 text-xs font-bold transition-all min-h-[38px] leading-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 ${
+                  className={`inline-flex items-center justify-center rounded-xl py-2 px-3 text-xs font-bold transition-all min-h-[40px] leading-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 cursor-pointer ${
                     authMode === 'otp'
-                      ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
+                      ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-900 dark:text-white'
                       : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
@@ -260,14 +264,14 @@ export default function LoginPage() {
             <CardContent className="space-y-4">
               {/* Alert Notification Banners */}
               {errorMessage && (
-                <div className="flex items-start space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+                <div className="flex items-start space-x-2.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300 font-medium animate-in fade-in-50">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-600 mt-0.5" />
-                  <div className="flex-1">{errorMessage}</div>
+                  <div className="flex-1 font-bold">{errorMessage}</div>
                 </div>
               )}
 
               {successMessage && (
-                <div className="flex items-start space-x-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+                <div className="flex items-start space-x-2.5 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300 font-bold animate-in fade-in-50">
                   <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600 mt-0.5" />
                   <div className="flex-1">{successMessage}</div>
                 </div>
@@ -277,7 +281,7 @@ export default function LoginPage() {
               {authMode === 'password' && (
                 <form onSubmit={handlePasswordLogin} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="email" required>
+                    <Label htmlFor="email" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       Email Address
                     </Label>
                     <Input
@@ -287,15 +291,17 @@ export default function LoginPage() {
                       autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      error={fieldErrors.email}
-                      icon={<Mail className="h-4 w-4" />}
+                      error={Boolean(fieldErrors.email)}
                       disabled={isLoading}
                     />
+                    {fieldErrors.email && (
+                      <p className="text-xs font-semibold text-rose-600">{fieldErrors.email}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password" required>
+                      <Label htmlFor="password" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                         Password
                       </Label>
                     </div>
@@ -306,14 +312,13 @@ export default function LoginPage() {
                       autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      error={fieldErrors.password}
-                      icon={<Lock className="h-4 w-4" />}
+                      error={Boolean(fieldErrors.password)}
                       disabled={isLoading}
                       rightElement={
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="text-slate-400 hover:text-slate-600"
+                          className="text-slate-400 hover:text-slate-600 cursor-pointer"
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -323,12 +328,15 @@ export default function LoginPage() {
                         </button>
                       }
                     />
+                    {fieldErrors.password && (
+                      <p className="text-xs font-semibold text-rose-600">{fieldErrors.password}</p>
+                    )}
                   </div>
 
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 shadow-sm"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 shadow-md shadow-emerald-950/10 rounded-xl"
                   >
                     {isLoading ? (
                       <>
@@ -351,7 +359,7 @@ export default function LoginPage() {
                   {!otpSent ? (
                     <div className="space-y-4">
                       <div className="space-y-1.5">
-                        <Label htmlFor="phone" required>
+                        <Label htmlFor="phone" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                           10-Digit Mobile Number
                         </Label>
                         <Input
@@ -361,17 +369,19 @@ export default function LoginPage() {
                           maxLength={10}
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          error={fieldErrors.phone}
-                          icon={<Phone className="h-4 w-4" />}
+                          error={Boolean(fieldErrors.phone)}
                           disabled={isLoading}
                         />
+                        {fieldErrors.phone && (
+                          <p className="text-xs font-semibold text-rose-600">{fieldErrors.phone}</p>
+                        )}
                       </div>
 
                       <Button
                         type="button"
                         onClick={handleSendPhoneOtp}
                         disabled={isLoading}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl shadow-md shadow-emerald-950/10"
                       >
                         {isLoading ? (
                           <>
@@ -386,8 +396,8 @@ export default function LoginPage() {
                   ) : (
                     <form onSubmit={handleVerifyPhoneOtp} className="space-y-4">
                       <div className="text-center space-y-1">
-                        <Label>Enter 6-Digit Code sent to +91 {phone}</Label>
-                        <p className="text-[11px] text-slate-500">
+                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Enter 6-Digit Code sent to +91 {phone}</Label>
+                        <p className="text-[11px] text-slate-500 font-medium">
                           Enter the SMS verification code dispatched to your mobile.
                         </p>
                       </div>
@@ -402,7 +412,7 @@ export default function LoginPage() {
                       <Button
                         type="submit"
                         disabled={isLoading || otp.length < 6}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl"
                       >
                         {isLoading ? (
                           <>
@@ -423,7 +433,7 @@ export default function LoginPage() {
                             setOtp('');
                             setErrorMessage(null);
                           }}
-                          className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline"
+                          className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline cursor-pointer"
                         >
                           ← Change Number
                         </button>
@@ -432,7 +442,7 @@ export default function LoginPage() {
                           type="button"
                           disabled={countdown > 0 || isLoading}
                           onClick={handleSendPhoneOtp}
-                          className="font-semibold text-emerald-600 hover:underline disabled:opacity-50"
+                          className="font-bold text-emerald-600 hover:underline disabled:opacity-50 cursor-pointer"
                         >
                           {countdown > 0
                             ? `Resend OTP in ${countdown}s`
@@ -450,7 +460,7 @@ export default function LoginPage() {
                   <div className="w-full border-t border-slate-200 dark:border-slate-800" />
                 </div>
                 <div className="relative flex justify-center text-[10px] uppercase">
-                  <span className="bg-white px-2 text-slate-400 dark:bg-slate-900 font-semibold tracking-wider">
+                  <span className="bg-white px-2.5 text-slate-400 dark:bg-slate-900 font-bold tracking-wider">
                     Or continue with
                   </span>
                 </div>
@@ -461,7 +471,7 @@ export default function LoginPage() {
                 type="button"
                 variant="outline"
                 onClick={handleGoogleLogin}
-                className="w-full border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
+                className="w-full border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-12 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 rounded-xl"
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
@@ -481,35 +491,35 @@ export default function LoginPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                Google OAuth
+                Sign in with Google
               </Button>
             </CardContent>
 
             {/* Quick Demo Autofill helper bar */}
             <CardFooter className="flex flex-col space-y-3 pt-0 border-t border-slate-100 dark:border-slate-800">
-              <div className="w-full pt-3">
-                <p className="text-[10px] uppercase font-bold text-slate-400 mb-2 text-center">
+              <div className="w-full pt-3.5">
+                <p className="text-[10px] uppercase font-bold text-slate-400 mb-2 text-center tracking-wider">
                   Quick Fill Test Credentials
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={fillCustomerDemo}
-                    className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-left text-[11px] font-medium text-slate-700 hover:border-emerald-500 hover:bg-emerald-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-[11px] font-medium text-slate-700 hover:border-emerald-500 hover:bg-emerald-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 cursor-pointer transition-colors"
                   >
                     👤 <span className="font-bold">Borrower Demo</span>
                   </button>
                   <button
                     type="button"
                     onClick={fillAdminDemo}
-                    className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-left text-[11px] font-medium text-slate-700 hover:border-rose-500 hover:bg-rose-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-[11px] font-medium text-slate-700 hover:border-rose-500 hover:bg-rose-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 cursor-pointer transition-colors"
                   >
                     🛡️ <span className="font-bold">Admin Demo</span>
                   </button>
                 </div>
               </div>
 
-              <p className="text-center text-xs text-slate-500">
+              <p className="text-center text-xs text-slate-500 font-medium">
                 Don&apos;t have an account?{' '}
                 <Link
                   href="/signup"

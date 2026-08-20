@@ -261,22 +261,37 @@ export function CustomerDashboard({
   // 2. Error State
   if (error && !application) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <div className="rounded-3xl border border-rose-200 bg-rose-50/80 p-8 dark:border-rose-900/40 dark:bg-rose-950/20">
-          <AlertCircle className="mx-auto h-12 w-12 text-rose-600" />
-          <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
-            Unable to Load Application Dashboard
+      <div className="mx-auto max-w-2xl px-4 py-12 text-center">
+        <div className="rounded-3xl border border-rose-200 bg-rose-50/90 p-8 shadow-fintech dark:border-rose-900/40 dark:bg-rose-950/30">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-900/40">
+            <AlertCircle className="h-7 w-7 text-rose-600 dark:text-rose-400" />
+          </div>
+          <h2 className="mt-4 text-xl font-black text-slate-900 dark:text-white">
+            Application Status Notification
           </h2>
-          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-            {error}
+          <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+            {error.includes('expired') || error.includes('401')
+              ? 'Your active session needs refresh. Please click below to refresh and load your application dossier.'
+              : error}
           </p>
-          <Button
-            onClick={() => fetchApplicationDetails()}
-            className="mt-6 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
-          >
-            <RefreshCw className="mr-2 h-3.5 w-3.5" />
-            Try Again
-          </Button>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Button
+              onClick={async () => {
+                await fetchApplicationDetails();
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md"
+            >
+              <RefreshCw className="mr-2 h-3.5 w-3.5" />
+              Refresh Dashboard
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/login')}
+              className="text-xs font-bold px-5 py-2.5 rounded-xl border-slate-300 dark:border-slate-700"
+            >
+              Sign In Again
+            </Button>
+          </div>
         </div>
       </div>
     );

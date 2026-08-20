@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import passport from 'passport';
 import { authController } from './auth.controller';
+import { authService } from './auth.service';
 import { validate } from '../../shared/middleware/validate.middleware';
 import { authGuard } from '../../shared/middleware/auth.middleware';
 import {
@@ -16,6 +17,14 @@ import { sendError } from '../../shared/utils/api-response';
 import { authLimiter } from '../../shared/middleware/rate-limit.middleware';
 
 const router = Router();
+
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: config.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  path: '/',
+};
 
 // Public Authentication Routes
 router.post(
@@ -54,15 +63,38 @@ router.post('/refresh', validate(refreshTokenSchema), (req, res, next) =>
 router.post('/logout', (req, res, next) => authController.logout(req, res, next));
 
 // Google OAuth 2.0 Endpoints
-router.get('/google', (req, res, next) => {
+router.get('/google', async (req, res, next) => {
+  // If real Google OAuth credentials are not set, provide seamless automatic development sign-in
   if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
+    if (config.NODE_ENV !== 'production') {
+      try {
+        console.log('ℹ️ [Google OAuth] Running in dev mock provider mode. Auto-authenticating Google borrower session...');
+        const result = await authService.handleOAuthLogin({
+          googleId: 'google_oauth_dev_user_101',
+          email: 'borrower.google@example.com',
+          name: 'Google Verified Borrower',
+        });
+
+        // Set httpOnly refresh token cookie
+        res.cookie('refreshToken', result.refreshToken, REFRESH_COOKIE_OPTIONS);
+
+        // Redirect directly to frontend OAuth callback
+        return res.redirect(
+          `${config.FRONTEND_URL}/auth/callback?token=${encodeURIComponent(result.accessToken)}`
+        );
+      } catch (err) {
+        return next(err);
+      }
+    }
+
     return sendError(
       res,
-      'Google OAuth credentials not configured in backend environment. Use POST /api/v1/auth/google/mock for local testing.',
+      'Google OAuth credentials not configured in backend environment. Use POST /api/v1/auth/google/mock for testing.',
       501,
       'OAUTH_NOT_CONFIGURED'
     );
   }
+
   return passport.authenticate('google', {
     scope: ['profile', 'email'],
     session: false,

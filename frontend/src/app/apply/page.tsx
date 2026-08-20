@@ -18,6 +18,7 @@ import {
   Loader2,
   RotateCcw,
   Check,
+  Lock,
 } from 'lucide-react';
 import { useAuth, ApplicationStage } from '../../contexts/auth-context';
 import { apiClient } from '../../lib/api-client';
@@ -89,9 +90,9 @@ export default function ApplyPage() {
       <CustomerRoute>
         <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
           <div className="text-center space-y-3">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-emerald-600" />
-            <p className="text-xs font-semibold text-slate-500">
-              Loading your loan application...
+            <Loader2 className="mx-auto h-9 w-9 animate-spin text-emerald-600" />
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              Loading your loan application session...
             </p>
           </div>
         </div>
@@ -101,29 +102,31 @@ export default function ApplyPage() {
 
   return (
     <CustomerRoute>
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 pb-16">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 pb-20">
         {/* Onboarding Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800/80 pb-6">
           <div>
-            <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              <Sparkles className="h-4 w-4" />
-              <span>DIGITAL LOAN ONBOARDING</span>
+            <div className="inline-flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>DIGITAL LOAN APPLICATION</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              Personal Loan Application
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
+              Personal Loan Underwriting
             </h1>
-            <p className="text-xs text-slate-500">
-              Application ID:{' '}
-              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Ref ID:{' '}
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
                 {application?.id || 'APP-ACTIVE'}
               </span>{' '}
-              • Registered to {user?.email || user?.phone}
+              • Verified Applicant: <strong className="text-slate-700 dark:text-slate-300">{user?.email || user?.phone}</strong>
             </p>
           </div>
 
-          <Badge variant="outline" className="self-start sm:self-auto text-xs py-1 px-3">
-            Stage: <span className="font-bold ml-1 text-emerald-600">{currentStage}</span>
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" dot className="self-start sm:self-auto text-xs py-1.5 px-3.5 font-bold shadow-xs">
+              Stage: <span className="font-extrabold ml-1 text-emerald-700 dark:text-emerald-400">{currentStage.replace(/_/g, ' ')}</span>
+            </Badge>
+          </div>
         </div>
 
         {/* Reusable 8-Step Stepper Component */}
@@ -159,7 +162,7 @@ export default function ApplyPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setCurrentStage('KYC_SUBMITTED')}
-                  className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 >
                   ← Back to Eligibility Assessment
                 </Button>

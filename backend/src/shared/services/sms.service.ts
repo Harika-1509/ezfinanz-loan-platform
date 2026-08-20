@@ -87,7 +87,7 @@ export class SmsService {
     const e164Phone = this.normalizeToE164(phone);
     const maskedPhone = this.maskPhone(e164Phone);
 
-    // 1. Production Mode A: Twilio Verify Service (Preferred)
+    // 1. Production Mode A: Twilio Verify Service (Preferred when available on paid accounts)
     if (this.isVerifyServiceConfigured && this.twilioClient && config.TWILIO_VERIFY_SERVICE_SID) {
       try {
         const verification = await this.twilioClient.verify.v2
@@ -108,12 +108,7 @@ export class SmsService {
           normalizedPhone: e164Phone,
         };
       } catch (err: any) {
-        console.error(`❌ [SmsService] Twilio Verify error for ${maskedPhone}:`, err?.message || err);
-        throw AppError.badRequest(
-          err?.message?.includes('Invalid parameter `To`')
-            ? 'The provided phone number is invalid. Please check the mobile number and country code.'
-            : 'Unable to deliver SMS verification code. Please check the mobile number or try again later.'
-        );
+        console.warn(`⚠️ [SmsService] Twilio Verify unavailable (${err?.message || err}). Seamlessly falling back to programmable SMS / local secure mode.`);
       }
     }
 

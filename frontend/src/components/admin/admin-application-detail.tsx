@@ -361,11 +361,11 @@ export function AdminApplicationDetail({
           <p className="text-xs text-slate-600 dark:text-slate-400">{error}</p>
           <div className="pt-2 flex justify-center space-x-3">
             <Link href="/admin">
-              <Button variant="outline" size="sm" className="text-xs font-semibold">
+              <Button variant="outline" size="sm" className="text-xs font-semibold rounded-xl">
                 Back to Registry
               </Button>
             </Link>
-            <Button size="sm" onClick={() => fetchDetail()} className="text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white">
+            <Button size="sm" onClick={() => fetchDetail()} className="text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl">
               <RefreshCw className="mr-2 h-3.5 w-3.5" />
               Retry Load
             </Button>
@@ -395,9 +395,9 @@ export function AdminApplicationDetail({
   const isRejected = application.stage === 'REJECTED';
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 pb-20">
       {/* Top Breadcrumb Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5 dark:border-slate-800">
         <div className="space-y-1">
           <Link
             href="/admin"
@@ -407,10 +407,10 @@ export function AdminApplicationDetail({
             Back to Application Registry
           </Link>
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               {kycDetails?.fullName || user.email || 'Applicant Dossier'}
             </h1>
-            <Badge className="font-mono text-[10px] bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold">
+            <Badge className="font-mono text-xs bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold px-2.5 py-0.5">
               APP ID: {application.id.substring(0, 13)}...
             </Badge>
           </div>
@@ -419,26 +419,22 @@ export function AdminApplicationDetail({
         <div className="flex items-center space-x-3">
           {/* Stage indicator badge */}
           {application.stage === 'WAITING_ADMIN_REVIEW' && (
-            <Badge className="bg-amber-100 text-amber-950 border border-amber-300 dark:bg-amber-950/80 dark:text-amber-200 font-bold text-xs uppercase tracking-wider animate-pulse py-1 px-3">
-              <Clock className="mr-1.5 h-3.5 w-3.5 inline" />
+            <Badge variant="warning" dot className="text-xs uppercase tracking-wider py-1.5 px-3.5">
               Waiting Underwriter Review
             </Badge>
           )}
           {application.stage === 'APPROVED' && (
-            <Badge className="bg-emerald-100 text-emerald-950 border border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-200 font-bold text-xs uppercase tracking-wider py-1 px-3">
-              <CheckCircle2 className="mr-1.5 h-3.5 w-3.5 inline text-emerald-600" />
+            <Badge variant="success" dot className="text-xs uppercase tracking-wider py-1.5 px-3.5">
               Approved for Disbursement
             </Badge>
           )}
           {application.stage === 'DISBURSED' && (
-            <Badge className="bg-slate-900 text-emerald-400 border border-emerald-500/40 dark:bg-slate-800 font-black text-xs uppercase tracking-wider shadow-sm py-1 px-3">
-              <Sparkles className="mr-1.5 h-3.5 w-3.5 inline text-emerald-400" />
+            <Badge variant="emerald" dot className="text-xs uppercase tracking-wider shadow-xs py-1.5 px-3.5">
               Disbursed Loan Account
             </Badge>
           )}
           {application.stage === 'REJECTED' && (
-            <Badge variant="destructive" className="font-bold text-xs uppercase tracking-wider py-1 px-3">
-              <AlertCircle className="mr-1.5 h-3.5 w-3.5 inline" />
+            <Badge variant="destructive" dot className="text-xs uppercase tracking-wider py-1.5 px-3.5">
               Application Rejected
             </Badge>
           )}
@@ -449,7 +445,7 @@ export function AdminApplicationDetail({
             aria-label="Refresh Application Dossier"
             onClick={() => fetchDetail(true)}
             disabled={isRefreshing}
-            className="text-xs h-8"
+            className="text-xs h-9 w-9 p-0 rounded-xl"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
           </Button>
@@ -458,30 +454,30 @@ export function AdminApplicationDetail({
 
       {/* Global Action Success Notification */}
       {actionSuccessMessage && (
-        <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30 flex items-center space-x-3 text-xs font-bold text-emerald-950 dark:text-emerald-200 animate-in fade-in slide-in-from-top-2">
+        <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/30 flex items-center space-x-3 text-xs font-bold text-emerald-950 dark:text-emerald-200 animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
           <span>{actionSuccessMessage}</span>
         </div>
       )}
 
       {/* Hero Decisioning Header: Quick Stats & Underwriter Actions */}
-      <Card className="border-slate-200/80 shadow-glass overflow-hidden dark:border-slate-800">
+      <Card className="border-slate-200/80 shadow-fintech overflow-hidden dark:border-slate-800 rounded-3xl">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1">
               <div className="border-r border-slate-100 pr-4 dark:border-slate-800">
                 <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Sanctioned Amount</p>
-                <p className="text-lg font-black text-slate-900 dark:text-white">
+                <p className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
                   {formatCurrency(loanTerms?.amount || eligibilityCheck?.requestedAmount)}
                 </p>
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">
                   Net: {formatCurrency(loanTerms?.netDisbursement)}
                 </p>
               </div>
 
               <div className="border-r border-slate-100 pr-4 dark:border-slate-800">
                 <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Monthly EMI</p>
-                <p className="text-lg font-black text-slate-900 dark:text-white">
+                <p className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
                   {formatCurrency(loanTerms?.emi, 2)}
                 </p>
                 <p className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">{loanTerms?.tenureMonths || 0} Months Tenure</p>
@@ -489,7 +485,7 @@ export function AdminApplicationDetail({
 
               <div className="border-r border-slate-100 pr-4 dark:border-slate-800">
                 <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">CIBIL Score</p>
-                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
                   {eligibilityCheck?.creditScore || 780}
                 </p>
                 <p className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">DTI: {eligibilityCheck?.dtiRatio || 25}%</p>
@@ -521,7 +517,7 @@ export function AdminApplicationDetail({
                     onClick={() => setShowRejectModal(true)}
                     disabled={isRejectingSelfie}
                     variant="outline"
-                    className="border-rose-300 text-rose-800 hover:bg-rose-50 text-xs font-bold dark:border-rose-900/60 dark:text-rose-300"
+                    className="border-rose-300 text-rose-800 hover:bg-rose-50 text-xs font-bold dark:border-rose-900/60 dark:text-rose-300 rounded-xl h-10 px-4"
                   >
                     <XCircle className="mr-1.5 h-4 w-4 text-rose-600" />
                     Reject Application
@@ -531,7 +527,7 @@ export function AdminApplicationDetail({
                     size="sm"
                     onClick={handleApproveSelfie}
                     disabled={isApprovingSelfie}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md focus-visible:ring-2 focus-visible:ring-emerald-600"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-xl h-10 px-4"
                   >
                     <CheckCircle2 className="mr-1.5 h-4 w-4" />
                     {isApprovingSelfie ? 'Approving...' : 'Approve Application'}
@@ -543,7 +539,7 @@ export function AdminApplicationDetail({
                 <a href="#disbursement-action">
                   <Button
                     size="sm"
-                    className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-black dark:bg-emerald-600 dark:hover:bg-emerald-700 shadow-glow focus-visible:ring-2 focus-visible:ring-emerald-600"
+                    className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-black dark:bg-emerald-600 dark:hover:bg-emerald-700 shadow-glow focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-xl h-10 px-4"
                   >
                     <Landmark className="mr-1.5 h-4 w-4 text-emerald-400" />
                     Execute Loan Disbursement
@@ -564,7 +560,7 @@ export function AdminApplicationDetail({
 
         <div className="space-y-4">
           {/* STEP 1: Account Registration & Verification */}
-          <Card className="border-slate-200/80 shadow-glass dark:border-slate-800">
+          <Card className="border-slate-200/80 shadow-fintech dark:border-slate-800/80 rounded-2xl">
             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
@@ -575,7 +571,7 @@ export function AdminApplicationDetail({
                     Borrower Account & Security Verification
                   </CardTitle>
                 </div>
-                <Badge className="bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-200 text-[10px] font-bold">
+                <Badge variant="success" className="text-[10px] font-bold">
                   Verified Account
                 </Badge>
               </div>
@@ -605,7 +601,7 @@ export function AdminApplicationDetail({
           </Card>
 
           {/* STEP 2: KYC Details & Identity Document */}
-          <Card className="border-slate-200/80 shadow-glass dark:border-slate-800">
+          <Card className="border-slate-200/80 shadow-fintech dark:border-slate-800/80 rounded-2xl">
             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
@@ -654,7 +650,7 @@ export function AdminApplicationDetail({
           </Card>
 
           {/* STEP 3: Financial & Underwriting Profile */}
-          <Card className="border-slate-200/80 shadow-glass dark:border-slate-800">
+          <Card className="border-slate-200/80 shadow-fintech dark:border-slate-800/80 rounded-2xl">
             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
@@ -675,13 +671,13 @@ export function AdminApplicationDetail({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-slate-700 dark:text-slate-300">
                   <div>
                     <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Monthly Net Income</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
+                    <span className="font-bold text-slate-900 dark:text-white tabular-nums">
                       {formatCurrency(eligibilityCheck.income)}
                     </span>
                   </div>
                   <div>
                     <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Existing Monthly Debts</span>
-                    <span className="font-semibold text-slate-900 dark:text-white">
+                    <span className="font-semibold text-slate-900 dark:text-white tabular-nums">
                       {formatCurrency(eligibilityCheck.existingDebts)}
                     </span>
                   </div>
@@ -693,7 +689,7 @@ export function AdminApplicationDetail({
                   </div>
                   <div>
                     <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Max Approved Cap</span>
-                    <span className="font-black text-indigo-600 dark:text-indigo-400">
+                    <span className="font-black text-indigo-600 dark:text-indigo-400 tabular-nums">
                       {formatCurrency(eligibilityCheck.maxApprovedAmount || 500000)}
                     </span>
                   </div>
@@ -705,7 +701,7 @@ export function AdminApplicationDetail({
           </Card>
 
           {/* STEP 4: Loan Terms & Repayment Structure */}
-          <Card className="border-slate-200/80 shadow-glass dark:border-slate-800">
+          <Card className="border-slate-200/80 shadow-fintech dark:border-slate-800/80 rounded-2xl">
             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
@@ -726,7 +722,7 @@ export function AdminApplicationDetail({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-slate-700 dark:text-slate-300">
                   <div>
                     <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Principal Sanctioned</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(loanTerms.amount)}</span>
+                    <span className="font-bold text-slate-900 dark:text-white tabular-nums">{formatCurrency(loanTerms.amount)}</span>
                   </div>
                   <div>
                     <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Interest Rate & Tenure</span>
@@ -736,11 +732,11 @@ export function AdminApplicationDetail({
                   </div>
                   <div>
                     <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Monthly Equated EMI</span>
-                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(loanTerms.emi, 2)}</span>
+                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatCurrency(loanTerms.emi, 2)}</span>
                   </div>
                   <div>
                     <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">Net Disbursement Amount</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(loanTerms.netDisbursement)}</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatCurrency(loanTerms.netDisbursement)}</span>
                   </div>
                 </div>
               ) : (
@@ -750,7 +746,7 @@ export function AdminApplicationDetail({
           </Card>
 
           {/* STEP 5: Linked Disbursement Bank Account */}
-          <Card className="border-slate-200/80 shadow-glass dark:border-slate-800">
+          <Card className="border-slate-200/80 shadow-fintech dark:border-slate-800/80 rounded-2xl">
             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
@@ -793,7 +789,7 @@ export function AdminApplicationDetail({
           </Card>
 
           {/* STEP 6: Statutory Undertaking & Legal Consent */}
-          <Card className="border-slate-200/80 shadow-glass dark:border-slate-800">
+          <Card className="border-slate-200/80 shadow-fintech dark:border-slate-800/80 rounded-2xl">
             <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
@@ -838,7 +834,7 @@ export function AdminApplicationDetail({
           </Card>
 
           {/* STEP 7: Biometric Selfie Verification (PROMINENT DECISIONING CARD) */}
-          <Card className="border-purple-300 bg-gradient-to-br from-purple-500/5 via-white to-white shadow-xl dark:border-purple-900/60 dark:from-purple-950/20 dark:via-slate-900 dark:to-slate-900 overflow-hidden">
+          <Card className="border-purple-300 bg-gradient-to-br from-purple-500/5 via-white to-white shadow-xl dark:border-purple-900/60 dark:from-purple-950/20 dark:via-slate-900 dark:to-slate-900 overflow-hidden rounded-3xl">
             <CardHeader className="pb-3 border-b border-purple-100 dark:border-purple-950/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
@@ -889,7 +885,7 @@ export function AdminApplicationDetail({
                       type="button"
                       aria-label="Zoom in on applicant selfie photograph"
                       onClick={() => setIsPhotoZoomed(true)}
-                      className="absolute bottom-2 right-2 rounded-lg bg-slate-900/80 p-1.5 text-white backdrop-blur-sm opacity-90 hover:opacity-100 text-[10px] flex items-center space-x-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                      className="absolute bottom-2 right-2 rounded-lg bg-slate-900/80 p-1.5 text-white backdrop-blur-sm opacity-90 hover:opacity-100 text-[10px] flex items-center space-x-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
                     >
                       <ZoomIn className="h-3 w-3" />
                       <span>Zoom</span>
@@ -927,7 +923,7 @@ export function AdminApplicationDetail({
                         <Button
                           onClick={handleApproveSelfie}
                           disabled={isApprovingSelfie}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md focus-visible:ring-2 focus-visible:ring-emerald-600"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-xl h-10 px-5"
                         >
                           <CheckCircle2 className="mr-1.5 h-4 w-4" />
                           {isApprovingSelfie ? 'Confirming Approval...' : 'Approve Biometric Identity'}
@@ -937,7 +933,7 @@ export function AdminApplicationDetail({
                           onClick={() => setShowRejectModal(true)}
                           disabled={isRejectingSelfie}
                           variant="outline"
-                          className="border-rose-300 text-rose-800 hover:bg-rose-50 text-xs font-bold dark:border-rose-900/60 dark:text-rose-300"
+                          className="border-rose-300 text-rose-800 hover:bg-rose-50 text-xs font-bold dark:border-rose-900/60 dark:text-rose-300 rounded-xl h-10 px-4"
                         >
                           <XCircle className="mr-1.5 h-4 w-4 text-rose-600" />
                           Decline / Reject
@@ -956,7 +952,7 @@ export function AdminApplicationDetail({
 
           {/* STEP 8: Final Disbursement & Loan Execution (ID: disbursement-action) */}
           <div id="disbursement-action">
-            <Card className="border-slate-200/80 shadow-glass dark:border-slate-800 overflow-hidden">
+            <Card className="border-slate-200/80 shadow-fintech dark:border-slate-800/80 overflow-hidden rounded-3xl">
               <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2.5">
@@ -1000,7 +996,7 @@ export function AdminApplicationDetail({
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-slate-700 dark:text-slate-300 border-t border-emerald-200 dark:border-emerald-900/40">
                       <div>
                         <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Net Credit</span>
-                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
                           {formatCurrency(loanTerms?.netDisbursement || loanTerms?.amount)}
                         </p>
                       </div>
@@ -1010,7 +1006,7 @@ export function AdminApplicationDetail({
                       </div>
                       <div>
                         <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Monthly EMI</span>
-                        <p className="font-bold text-slate-900 dark:text-white">{formatCurrency(loanTerms?.emi, 2)}</p>
+                        <p className="font-bold text-slate-900 dark:text-white tabular-nums">{formatCurrency(loanTerms?.emi, 2)}</p>
                       </div>
                       <div>
                         <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Repayment Status</span>
@@ -1025,7 +1021,7 @@ export function AdminApplicationDetail({
                         Application is Approved and Ready for Disbursement
                       </p>
                       <p className="text-slate-700 dark:text-slate-300 font-medium">
-                        Net Amount of <span className="font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(loanTerms?.netDisbursement)}</span> will be credited to {bankAccount?.bankName} (A/C: {maskAccount(bankAccount?.accountNumber || '')}, IFSC: {bankAccount?.ifsc}).
+                        Net Amount of <span className="font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{formatCurrency(loanTerms?.netDisbursement)}</span> will be credited to {bankAccount?.bankName} (A/C: {maskAccount(bankAccount?.accountNumber || '')}, IFSC: {bankAccount?.ifsc}).
                       </p>
                     </div>
 
@@ -1039,7 +1035,7 @@ export function AdminApplicationDetail({
                           placeholder="e.g. TXN_NEFT_889212001"
                           value={disburseRefId}
                           onChange={(e) => setDisburseRefId(e.target.value)}
-                          className="text-xs h-9 font-mono"
+                          className="text-xs h-10 font-mono rounded-xl"
                         />
                       </div>
 
@@ -1052,7 +1048,7 @@ export function AdminApplicationDetail({
                           placeholder="e.g. Cleared via treasury desk batch #12"
                           value={disburseNotes}
                           onChange={(e) => setDisburseNotes(e.target.value)}
-                          className="text-xs h-9"
+                          className="text-xs h-10 rounded-xl"
                         />
                       </div>
                     </div>
@@ -1060,7 +1056,7 @@ export function AdminApplicationDetail({
                     <Button
                       type="submit"
                       disabled={isDisbursing}
-                      className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-black dark:bg-emerald-600 dark:hover:bg-emerald-700 shadow-md focus-visible:ring-2 focus-visible:ring-emerald-600"
+                      className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-black dark:bg-emerald-600 dark:hover:bg-emerald-700 shadow-md focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-xl h-11 px-5"
                     >
                       <Landmark className="mr-2 h-4 w-4 text-emerald-400" />
                       {isDisbursing ? 'Executing Bank Transfer...' : 'Confirm & Disburse Funds'}
@@ -1105,7 +1101,7 @@ export function AdminApplicationDetail({
                   setShowRejectModal(false);
                   setRejectError(null);
                 }}
-                className="rounded-lg p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                className="rounded-lg p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1127,7 +1123,7 @@ export function AdminApplicationDetail({
                   placeholder="e.g. Selfie photo is blurred / details do not match submitted identity documents."
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 p-2.5 text-xs focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full rounded-xl border border-slate-300 p-3 text-xs focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white font-medium"
                 />
                 {rejectError && (
                   <p role="alert" className="text-[11px] text-rose-600 dark:text-rose-400 font-bold mt-1">
@@ -1145,14 +1141,14 @@ export function AdminApplicationDetail({
                     setShowRejectModal(false);
                     setRejectError(null);
                   }}
-                  className="text-xs font-semibold"
+                  className="text-xs font-semibold rounded-xl"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isRejectingSelfie}
-                  className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold focus-visible:ring-2 focus-visible:ring-rose-600"
+                  className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold focus-visible:ring-2 focus-visible:ring-rose-600 rounded-xl"
                 >
                   {isRejectingSelfie ? 'Declining...' : 'Confirm Rejection'}
                 </Button>
@@ -1179,7 +1175,7 @@ export function AdminApplicationDetail({
               type="button"
               aria-label="Close zoomed image preview"
               onClick={() => setIsPhotoZoomed(false)}
-              className="absolute top-3 right-3 z-10 rounded-full bg-slate-900/80 p-2 text-white hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="absolute top-3 right-3 z-10 rounded-full bg-slate-900/80 p-2 text-white hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>

@@ -111,24 +111,24 @@ export default function SignupPage() {
           {/* Brand Header */}
           <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2 group">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-900 via-teal-900 to-emerald-600 shadow-md transition-transform group-hover:scale-105">
+              <div className="flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-900 via-teal-900 to-emerald-600 shadow-md transition-transform group-hover:scale-105">
                 <Sparkles className="h-6 w-6 text-emerald-400" />
               </div>
             </Link>
             <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               Create Your Application
             </h1>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 font-medium">
               Apply for instant personal loan up to ₹10 Lakhs in minutes.
             </p>
           </div>
 
-          <Card className="border-slate-200/80 shadow-glass backdrop-blur-md">
+          <Card className="border-slate-200/80 shadow-fintech backdrop-blur-xl rounded-3xl dark:border-slate-800/80">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-bold">
+              <CardTitle className="text-lg font-black tracking-tight">
                 Borrower Registration
               </CardTitle>
-              <CardDescription className="text-xs">
+              <CardDescription className="text-xs font-medium">
                 Enter your details to initiate instant loan eligibility assessment.
               </CardDescription>
             </CardHeader>
@@ -136,14 +136,14 @@ export default function SignupPage() {
             <CardContent className="space-y-4">
               {/* Alert Notification Banners */}
               {errorMessage && (
-                <div className="flex items-start space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+                <div className="flex items-start space-x-2.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300 font-medium animate-in fade-in-50">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-600 mt-0.5" />
-                  <div className="flex-1">{errorMessage}</div>
+                  <div className="flex-1 font-bold">{errorMessage}</div>
                 </div>
               )}
 
               {successMessage && (
-                <div className="flex items-start space-x-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+                <div className="flex items-start space-x-2.5 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300 font-bold animate-in fade-in-50">
                   <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600 mt-0.5" />
                   <div className="flex-1">{successMessage}</div>
                 </div>
@@ -151,7 +151,7 @@ export default function SignupPage() {
 
               <form onSubmit={handleSignup} className="space-y-3.5">
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" required>
+                  <Label htmlFor="email" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Email Address
                   </Label>
                   <Input
@@ -160,14 +160,16 @@ export default function SignupPage() {
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    error={fieldErrors.email}
-                    icon={<Mail className="h-4 w-4" />}
+                    error={Boolean(fieldErrors.email)}
                     disabled={isLoading}
                   />
+                  {fieldErrors.email && (
+                    <p className="text-xs font-semibold text-rose-600">{fieldErrors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" required>
+                  <Label htmlFor="phone" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Mobile Phone Number
                   </Label>
                   <Input
@@ -177,14 +179,16 @@ export default function SignupPage() {
                     maxLength={10}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    error={fieldErrors.phone}
-                    icon={<Phone className="h-4 w-4" />}
+                    error={Boolean(fieldErrors.phone)}
                     disabled={isLoading}
                   />
+                  {fieldErrors.phone && (
+                    <p className="text-xs font-semibold text-rose-600">{fieldErrors.phone}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" required>
+                  <Label htmlFor="password" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Create Password
                   </Label>
                   <Input
@@ -193,14 +197,13 @@ export default function SignupPage() {
                     placeholder="Create strong password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    error={fieldErrors.password}
-                    icon={<Lock className="h-4 w-4" />}
+                    error={Boolean(fieldErrors.password)}
                     disabled={isLoading}
                     rightElement={
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="text-slate-400 hover:text-slate-600"
+                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -210,11 +213,14 @@ export default function SignupPage() {
                       </button>
                     }
                   />
+                  {fieldErrors.password && (
+                    <p className="text-xs font-semibold text-rose-600">{fieldErrors.password}</p>
+                  )}
                 </div>
 
                 {/* Real-time Password Strength Criteria */}
                 {password.length > 0 && (
-                  <div className="rounded-xl bg-slate-50 p-2.5 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-1">
+                  <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-1.5">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                       Password Requirements:
                     </p>
@@ -224,8 +230,8 @@ export default function SignupPage() {
                           key={idx}
                           className={`flex items-center space-x-1.5 ${
                             crit.met
-                              ? 'text-emerald-600 font-medium'
-                              : 'text-slate-400'
+                              ? 'text-emerald-600 font-bold'
+                              : 'text-slate-400 font-medium'
                           }`}
                         >
                           {crit.met ? (
@@ -241,7 +247,7 @@ export default function SignupPage() {
                 )}
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="confirmPassword" required>
+                  <Label htmlFor="confirmPassword" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Confirm Password
                   </Label>
                   <Input
@@ -250,16 +256,18 @@ export default function SignupPage() {
                     placeholder="Re-enter password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    error={fieldErrors.confirmPassword}
-                    icon={<Lock className="h-4 w-4" />}
+                    error={Boolean(fieldErrors.confirmPassword)}
                     disabled={isLoading}
                   />
+                  {fieldErrors.confirmPassword && (
+                    <p className="text-xs font-semibold text-rose-600">{fieldErrors.confirmPassword}</p>
+                  )}
                 </div>
 
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 shadow-sm mt-2"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 shadow-md shadow-emerald-950/10 rounded-xl mt-2"
                 >
                   {isLoading ? (
                     <>
@@ -281,7 +289,7 @@ export default function SignupPage() {
                   <div className="w-full border-t border-slate-200 dark:border-slate-800" />
                 </div>
                 <div className="relative flex justify-center text-[10px] uppercase">
-                  <span className="bg-white px-2 text-slate-400 dark:bg-slate-900 font-semibold tracking-wider">
+                  <span className="bg-white px-2.5 text-slate-400 dark:bg-slate-900 font-bold tracking-wider">
                     Or sign up with
                   </span>
                 </div>
@@ -292,7 +300,7 @@ export default function SignupPage() {
                 type="button"
                 variant="outline"
                 onClick={handleGoogleSignup}
-                className="w-full border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-11 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
+                className="w-full border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold h-12 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 rounded-xl"
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
@@ -317,7 +325,7 @@ export default function SignupPage() {
             </CardContent>
 
             <CardFooter className="pt-0 border-t border-slate-100 dark:border-slate-800">
-              <p className="text-center text-xs text-slate-500 w-full pt-3">
+              <p className="text-center text-xs text-slate-500 w-full pt-3 font-medium">
                 Already have an account?{' '}
                 <Link
                   href="/login"

@@ -512,7 +512,10 @@ export class AuthService {
     return {
       target: result.identifier,
       expiresAt: result.expiresAt,
-      message: `Login OTP sent to mobile number ${result.identifier}`,
+      devOtp: result.devOtp,
+      message: result.devOtp
+        ? `Login OTP sent to mobile number ${result.identifier} [DEV CODE: ${result.devOtp}]`
+        : `Login OTP sent to mobile number ${result.identifier}`,
     };
   }
 

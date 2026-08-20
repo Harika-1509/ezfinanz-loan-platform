@@ -270,50 +270,50 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
   // If already submitted and waiting for admin review, show celebration confirmation state
   if (isSuccess || application?.stage === 'WAITING_ADMIN_REVIEW') {
     return (
-      <Card className="border-emerald-200/80 bg-gradient-to-b from-white via-slate-50/50 to-emerald-50/30 shadow-glass dark:border-emerald-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/30">
+      <Card className="border-emerald-200/80 bg-gradient-to-b from-white via-slate-50/50 to-emerald-50/30 shadow-fintech dark:border-emerald-900/40 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/30 rounded-3xl">
         <CardContent className="flex flex-col items-center justify-center p-6 sm:p-12 text-center space-y-6">
           {/* Animated Hero Badge */}
           <div className="relative flex items-center justify-center">
-            <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 animate-pulse">
+            <div className="h-20 w-20 rounded-3xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 shadow-emerald-glow">
               <Clock className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md">
-              <Sparkles className="h-3.5 w-3.5" />
+            <div className="absolute -top-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md">
+              <Sparkles className="h-4 w-4" />
             </div>
           </div>
 
           <div className="space-y-2 max-w-lg">
-            <Badge variant="outline" className="text-emerald-800 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-200 text-xs px-3 py-1 font-bold">
+            <Badge variant="outline" className="text-emerald-800 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-200 text-xs px-3.5 py-1 font-bold">
               ✓ Step 7 of 8: Biometric Verification Submitted
             </Badge>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
               Application Under Review
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
               Your identity selfie, KYC documents, and loan agreement have been received and queued for administrative underwriting review.
             </p>
           </div>
 
           {/* Details Card */}
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white/90 p-5 text-xs text-left shadow-xs dark:border-slate-800 dark:bg-slate-850 space-y-3">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white/95 p-5 text-xs text-left shadow-fintech dark:border-slate-800 dark:bg-slate-850 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-slate-600 dark:text-slate-400 font-medium">Application Reference</span>
-              <span className="font-mono font-bold text-slate-900 dark:text-white">
+              <span className="text-slate-500 dark:text-slate-400 font-bold">Application Reference</span>
+              <span className="font-mono font-black text-slate-900 dark:text-white">
                 {application?.id || 'APP-EZF-001'}
               </span>
             </div>
 
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-slate-600 dark:text-slate-400 font-medium">Current Status</span>
-              <span className="inline-flex items-center font-bold text-amber-700 dark:text-amber-300">
+              <span className="text-slate-500 dark:text-slate-400 font-bold">Current Status</span>
+              <span className="inline-flex items-center font-black text-amber-700 dark:text-amber-300">
                 <span className="mr-1.5 h-2 w-2 rounded-full bg-amber-500 animate-ping" />
                 Waiting for Admin Review
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-slate-400 font-medium">Estimated Turnaround</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="text-slate-500 dark:text-slate-400 font-bold">Estimated Turnaround</span>
+              <span className="font-black text-emerald-600 dark:text-emerald-400">
                 Under 15–30 Minutes
               </span>
             </div>
@@ -321,18 +321,18 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
 
           {/* Selfie Thumbnail Preview if available */}
           {(capturedImage || existingSelfieUrl) && (
-            <div className="flex items-center space-x-3 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center space-x-3.5 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={capturedImage || existingSelfieUrl || ''}
                 alt="Submitted Selfie"
-                className="h-12 w-12 rounded-lg object-cover border border-slate-300 dark:border-slate-700"
+                className="h-12 w-12 rounded-xl object-cover border border-slate-300 dark:border-slate-700"
               />
-              <div className="text-left text-[11px]">
+              <div className="text-left text-xs">
                 <div className="font-bold text-slate-800 dark:text-slate-200">
                   Verification Selfie Encrypted & Stored
                 </div>
-                <div className="text-slate-500 dark:text-slate-400">
+                <div className="text-slate-500 dark:text-slate-400 text-[11px]">
                   Liveness check verified successfully
                 </div>
               </div>
@@ -347,16 +347,16 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
               disabled={isCheckingStatus}
               variant="outline"
               size="sm"
-              className="text-xs font-bold min-h-[40px]"
+              className="text-xs font-bold min-h-[44px] rounded-xl px-5"
             >
               {isCheckingStatus ? (
                 <>
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Checking Status...
                 </>
               ) : (
                 <>
-                  <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                  <RefreshCw className="mr-2 h-4 w-4" />
                   Refresh Approval Status
                 </>
               )}
@@ -372,9 +372,9 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
               }}
               variant="ghost"
               size="sm"
-              className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white min-h-[44px] rounded-xl"
             >
-              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+              <RotateCcw className="mr-1.5 h-4 w-4" />
               Retake Selfie Photo
             </Button>
           </div>
@@ -387,38 +387,42 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
       {/* Left Column: Live Camera & Viewfinder (7 Cols) */}
       <div className="lg:col-span-7 space-y-6">
-        <Card className="border-slate-200/80 shadow-glass dark:border-slate-800">
+        <Card className="border-slate-200/80 shadow-fintech backdrop-blur-xl dark:border-slate-800/80">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
-                <Camera className="h-5 w-5" />
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  Step 7 of 8: Biometric Liveness Verification
-                </span>
+              <div className="flex items-center space-x-3 text-emerald-600 dark:text-emerald-400">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 shadow-xs">
+                  <Camera className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    Step 7 of 8: Biometric Liveness Verification
+                  </span>
+                  <CardTitle className="text-xl font-extrabold text-slate-900 dark:text-white">
+                    Take a Verification Selfie
+                  </CardTitle>
+                </div>
               </div>
-              <Badge variant="outline" className="text-[10px] text-emerald-800 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-200 font-bold">
+              <Badge variant="outline" className="text-xs text-emerald-800 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-200 font-bold px-3 py-1">
                 Live Face Capture
               </Badge>
             </div>
 
-            <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
-              Take a Verification Selfie
-            </CardTitle>
-            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400 font-medium pt-1">
               Please position your face inside the oval frame to complete automated biometric verification.
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             {error && (
-              <div role="alert" className="flex items-center space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200 font-medium">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-                <span>{error}</span>
+              <div role="alert" className="flex items-start space-x-2.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200 font-medium animate-in fade-in-50">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
+                <span className="font-bold">{error}</span>
               </div>
             )}
 
             {/* Viewfinder / Preview Container */}
-            <div className="relative mx-auto flex aspect-square w-full max-w-[300px] sm:max-w-[360px] items-center justify-center overflow-hidden rounded-3xl border-2 border-slate-800 bg-slate-950 shadow-inner">
+            <div className="relative mx-auto flex aspect-square w-full max-w-[320px] sm:max-w-[380px] items-center justify-center overflow-hidden rounded-3xl border-2 border-slate-800 bg-slate-950 shadow-inner">
               {/* If Captured: Display snapshot */}
               {capturedImage ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -440,11 +444,11 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
 
                   {/* Biometric Oval Guide Overlay */}
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                    <div className="h-56 w-40 sm:h-64 sm:w-48 rounded-[50%] border-2 border-dashed border-emerald-400/80 shadow-glow" />
+                    <div className="h-56 w-40 sm:h-64 sm:w-48 rounded-[50%] border-2 border-dashed border-emerald-400/80 shadow-emerald-glow" />
                   </div>
 
                   <div className="pointer-events-none absolute bottom-3 left-0 right-0 text-center">
-                    <span className="rounded-full bg-black/70 px-3 py-1 text-[10px] font-bold text-emerald-300 backdrop-blur-md">
+                    <span className="rounded-full bg-black/70 px-3.5 py-1 text-xs font-bold text-emerald-300 backdrop-blur-md">
                       Center your face in the oval
                     </span>
                   </div>
@@ -455,7 +459,7 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
                   <CameraOff className="h-12 w-12 text-slate-400" />
                   <div className="text-xs">
                     <p className="font-bold text-white">Camera Unavailable</p>
-                    <p className="mt-1 text-[11px] text-slate-400">
+                    <p className="mt-1 text-xs text-slate-400 font-medium">
                       {cameraError || 'Please upload a clear selfie photo from your device.'}
                     </p>
                   </div>
@@ -464,9 +468,9 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-xs border-slate-700 bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-emerald-400"
+                    className="text-xs border-slate-700 bg-slate-900 text-white hover:bg-slate-800 rounded-xl"
                   >
-                    <Upload className="mr-2 h-3.5 w-3.5" />
+                    <Upload className="mr-2 h-4 w-4" />
                     Select Image File
                   </Button>
                 </div>
@@ -496,9 +500,9 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
                     variant="outline"
                     onClick={retakePhoto}
                     disabled={isSubmitting}
-                    className="text-xs font-bold min-h-[44px]"
+                    className="text-xs font-bold min-h-[44px] rounded-xl px-5"
                   >
-                    <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                    <RotateCcw className="mr-2 h-4 w-4" />
                     Retake Photo
                   </Button>
 
@@ -506,7 +510,7 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
                     type="button"
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-md shadow-emerald-500/20 active:scale-[0.98] min-h-[44px] px-5"
+                    className="bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-md shadow-emerald-950/10 active:scale-[0.98] min-h-[44px] px-6 rounded-xl"
                   >
                     {isSubmitting ? (
                       <>
@@ -526,7 +530,7 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
                   <Button
                     type="button"
                     onClick={capturePhoto}
-                    className="h-12 rounded-full bg-emerald-600 px-6 font-bold text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-700 active:scale-95"
+                    className="h-12 rounded-xl bg-emerald-600 px-6 font-bold text-white shadow-md shadow-emerald-950/10 hover:bg-emerald-700 active:scale-95"
                   >
                     <Camera className="mr-2 h-5 w-5" />
                     Take Photo
@@ -537,9 +541,9 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white rounded-xl"
                   >
-                    <Upload className="mr-1.5 h-3.5 w-3.5" />
+                    <Upload className="mr-1.5 h-4 w-4" />
                     Upload File Instead
                   </Button>
                 </div>
@@ -555,7 +559,7 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
                 size="sm"
                 onClick={onBack}
                 disabled={isSubmitting}
-                className="text-xs font-semibold"
+                className="text-xs font-semibold rounded-xl"
               >
                 <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
                 Back to Declaration
@@ -567,7 +571,7 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
 
       {/* Right Column: Verification Guidelines & Quality Standards (5 Cols) */}
       <div className="lg:col-span-5 space-y-6">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-glass dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-fintech dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
             <UserCheck className="h-5 w-5" />
             <h3 className="text-sm font-bold uppercase tracking-wider">
@@ -575,12 +579,12 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
             </h3>
           </div>
 
-          <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
             To ensure swift automated underwriting and immediate approval, make sure your photo satisfies these criteria:
           </p>
 
           <div className="mt-4 space-y-3 text-xs">
-            <div className="flex items-start space-x-2.5 rounded-xl bg-slate-50 p-3 dark:bg-slate-850 border border-slate-100 dark:border-slate-800">
+            <div className="flex items-start space-x-3 rounded-xl bg-slate-50 p-3.5 dark:bg-slate-850 border border-slate-100 dark:border-slate-800">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold text-slate-800 dark:text-slate-200">
@@ -592,7 +596,7 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
               </div>
             </div>
 
-            <div className="flex items-start space-x-2.5 rounded-xl bg-slate-50 p-3 dark:bg-slate-850 border border-slate-100 dark:border-slate-800">
+            <div className="flex items-start space-x-3 rounded-xl bg-slate-50 p-3.5 dark:bg-slate-850 border border-slate-100 dark:border-slate-800">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold text-slate-800 dark:text-slate-200">
@@ -604,7 +608,7 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
               </div>
             </div>
 
-            <div className="flex items-start space-x-2.5 rounded-xl bg-slate-50 p-3 dark:bg-slate-850 border border-slate-100 dark:border-slate-800">
+            <div className="flex items-start space-x-3 rounded-xl bg-slate-50 p-3.5 dark:bg-slate-850 border border-slate-100 dark:border-slate-800">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold text-slate-800 dark:text-slate-200">
@@ -617,12 +621,12 @@ export function SelfieCapture({ onSuccess, onBack }: SelfieCaptureProps) {
             </div>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-4 text-[11px] text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+          <div className="mt-6 rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-4 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
             <div className="flex items-center space-x-2 font-bold">
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
               <span>Biometric Security Guarantee</span>
             </div>
-            <p className="mt-1 leading-relaxed">
+            <p className="mt-1 text-[11px] leading-relaxed text-emerald-800 dark:text-emerald-300">
               Your biometric selfie is cross-referenced with your Aadhaar/PAN photo and stored in accordance with RBI cyber security guidelines.
             </p>
           </div>

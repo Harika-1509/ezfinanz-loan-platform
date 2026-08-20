@@ -43,8 +43,9 @@ const envSchema = z.object({
 
   // OTP Security Controls
   OTP_EXPIRY_MINUTES: z.string().default('10').transform(Number),
-  OTP_MAX_ATTEMPTS: z.string().default('5').transform(Number),
-  OTP_RESEND_COOLDOWN_SECONDS: z.string().default('60').transform(Number),
+  OTP_MAX_ATTEMPTS: z.string().default('10').transform(Number),
+  OTP_RESEND_COOLDOWN_SECONDS: z.string().default('10').transform(Number),
+  OTP_LOCKOUT_MINUTES: z.string().default('10').transform(Number),
   OTP_HMAC_SECRET: z.string().default('ezfinanz_otp_hmac_secret_salt_2026'),
 });
 

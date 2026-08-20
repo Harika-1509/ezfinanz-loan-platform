@@ -1,194 +1,164 @@
-'use client';
-
-import React, { useRef, useState } from 'react';
-import { UploadCloud, Image as ImageIcon, X, CheckCircle2 } from 'lucide-react';
+import * as React from 'react';
+import { UploadCloud, CheckCircle2, AlertCircle, Trash2, FileText, Image as ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from './button';
-import { cn } from '../../lib/utils';
 
 export interface FileUploadProps {
   label?: string;
-  helperText?: string;
+  description?: string;
   accept?: string;
-  maxSizeMb?: number;
+  maxSizeBytes?: number;
   value?: File | null;
-  previewUrl?: string | null;
-  onChange: (file: File | null, previewUrl: string | null) => void;
-  disabled?: boolean;
+  onChange: (file: File | null) => void;
   error?: string;
+  disabled?: boolean;
   className?: string;
 }
 
 export function FileUpload({
   label = 'Upload Document',
-  helperText = 'PNG, JPG, or JPEG up to 5MB',
-  accept = 'image/jpeg,image/png,image/webp,image/jpg',
-  maxSizeMb = 5,
+  description = 'PNG, JPG, or PDF up to 5MB',
+  accept = 'image/png,image/jpeg,image/jpg,application/pdf',
+  maxSizeBytes = 5 * 1024 * 1024,
   value,
-  previewUrl,
   onChange,
-  disabled = false,
   error,
+  disabled = false,
   className,
 }: FileUploadProps) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const [isDragOver, setIsDragOver] = React.useState(false);
+  const [localError, setLocalError] = React.useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
 
-  const handleFile = (file: File | null) => {
+  React.useEffect(() => {
+    if (value && value.type.startsWith('image/')) {
+      const url = URL.createObjectURL(value);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [value]);
+
+  const handleFile = (file: File) => {
     setLocalError(null);
-    if (!file) {
-      onChange(null, null);
+    if (file.size > maxSizeBytes) {
+      setLocalError(`File size exceeds ${(maxSizeBytes / (1024 * 1024)).toFixed(0)}MB limit`);
       return;
     }
-
-    // Validate size
-    if (file.size > maxSizeMb * 1024 * 1024) {
-      setLocalError(`File exceeds maximum allowed size of ${maxSizeMb}MB.`);
-      return;
-    }
-
-    // Create object URL for preview
-    const objectUrl = URL.createObjectURL(file);
-    onChange(file, objectUrl);
+    onChange(file);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (!disabled) setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+    setIsDragOver(false);
     if (disabled) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const droppedFile = e.dataTransfer.files[0];
-      handleFile(droppedFile);
+      handleFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleClear = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    onChange(null, null);
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!disabled) setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange(null);
     setLocalError(null);
+    if (inputRef.current) inputRef.current.value = '';
   };
 
-  const displayError = error || localError;
+  const activeError = error || localError;
 
   return (
-    <div className={cn('w-full space-y-1.5', className)}>
-      {label && (
-        <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-          {label}
-        </span>
-      )}
-
-      {/* Hidden native input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={accept}
-        disabled={disabled}
-        onChange={(e) => {
-          if (e.target.files && e.target.files.length > 0) {
-            handleFile(e.target.files[0]);
-          }
-        }}
-        className="hidden"
-      />
-
-      {previewUrl || value ? (
-        /* Preview Card */
-        <div className="relative flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center space-x-3 overflow-hidden">
-            {previewUrl ? (
-              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previewUrl}
-                  alt="Document Preview"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-                <ImageIcon className="h-6 w-6" />
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">
-                {value ? value.name : 'Document Attached'}
-              </p>
-              <p className="text-[11px] text-slate-400">
-                {value ? `${(value.size / 1024 / 1024).toFixed(2)} MB` : 'Attached'}
-              </p>
-              <div className="mt-0.5 inline-flex items-center space-x-1 text-[10px] font-medium text-emerald-600">
-                <CheckCircle2 className="h-3 w-3" />
-                <span>Ready for submission</span>
-              </div>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={disabled}
-            onClick={handleClear}
-            className="text-slate-400 hover:text-rose-600 focus-visible:ring-2 focus-visible:ring-rose-500"
-            aria-label="Remove attached file"
-            title="Remove attached file"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : (
-        /* Dropzone Card with Keyboard Accessibility */
-        <div
-          tabIndex={disabled ? -1 : 0}
-          role="button"
-          aria-label={label}
-          onKeyDown={(e) => {
-            if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
-              e.preventDefault();
-              fileInputRef.current?.click();
+    <div className={cn('w-full space-y-2', className)}>
+      <div
+        onClick={() => !disabled && inputRef.current?.click()}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        className={cn(
+          'relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-200 cursor-pointer',
+          isDragOver
+            ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30'
+            : value
+            ? 'border-emerald-300 bg-emerald-50/20 dark:border-emerald-900 dark:bg-emerald-950/20'
+            : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:border-slate-700',
+          activeError && 'border-rose-300 bg-rose-50/20 dark:border-rose-900 dark:bg-rose-950/20',
+          disabled && 'cursor-not-allowed opacity-60'
+        )}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          disabled={disabled}
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              handleFile(e.target.files[0]);
             }
           }}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => {
-            if (!disabled) fileInputRef.current?.click();
-          }}
-          className={cn(
-            'flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
-            isDragging
-              ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30'
-              : 'border-slate-300 bg-slate-50/50 hover:bg-slate-100/60 dark:border-slate-700 dark:bg-slate-900/40 dark:hover:bg-slate-900',
-            displayError && 'border-rose-500 bg-rose-50/30',
-            disabled && 'cursor-not-allowed opacity-50'
-          )}
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-            <UploadCloud className="h-5 w-5" />
-          </div>
-          <p className="mt-2 text-xs font-bold text-slate-800 dark:text-slate-200">
-            Click to upload or drag and drop
-          </p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">{helperText}</p>
-        </div>
-      )}
+          className="hidden"
+          aria-label={label}
+        />
 
-      {displayError && (
-        <p role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-400">{displayError}</p>
+        {value ? (
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-between">
+            <div className="flex items-center gap-3.5 text-left truncate">
+              {previewUrl ? (
+                <div className="h-12 w-12 rounded-xl overflow-hidden border border-emerald-200 bg-white shrink-0 shadow-xs">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={previewUrl} alt="Upload preview" className="h-full w-full object-cover" />
+                </div>
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 shrink-0">
+                  <FileText className="h-6 w-6" />
+                </div>
+              )}
+              <div className="truncate">
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{value.name}</p>
+                <p className="text-xs font-medium text-slate-500">{(value.size / 1024).toFixed(1)} KB • Attached</p>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleRemove}
+              disabled={disabled}
+              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 shrink-0"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Remove</span>
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100/70 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 mb-3 shadow-xs">
+              <UploadCloud className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{label}</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{description}</p>
+            <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">Click to browse or drag and drop</p>
+          </div>
+        )}
+      </div>
+
+      {activeError && (
+        <p className="flex items-center gap-1.5 text-xs font-medium text-rose-600 dark:text-rose-400">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          <span>{activeError}</span>
+        </p>
       )}
     </div>
   );

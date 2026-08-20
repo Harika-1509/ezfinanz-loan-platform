@@ -13,6 +13,7 @@ import {
   Check,
   AlertCircle,
   Clock,
+  Sparkles,
 } from 'lucide-react';
 import { ApplicationStage } from '../../contexts/auth-context';
 import { cn } from '../../lib/utils';
@@ -149,75 +150,75 @@ export function getStageBadge(stage?: ApplicationStage | null): {
     case 'VERIFICATION_PENDING':
       return {
         label: 'Verification Pending',
-        color: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800',
+        color: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/80',
         icon: Clock,
       };
     case 'VERIFIED':
     case 'KYC_PENDING':
       return {
         label: 'KYC Pending',
-        color: 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950/60 dark:text-blue-200 dark:border-blue-800',
+        color: 'bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800/80',
         icon: Clock,
       };
     case 'KYC_SUBMITTED':
       return {
         label: 'KYC Submitted',
-        color: 'bg-indigo-100 text-indigo-900 border-indigo-300 dark:bg-indigo-950/60 dark:text-indigo-200 dark:border-indigo-800',
+        color: 'bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800/80',
         icon: Clock,
       };
     case 'ELIGIBILITY_CHECKED':
       return {
         label: 'Eligibility Checked',
-        color: 'bg-teal-100 text-teal-900 border-teal-300 dark:bg-teal-950/60 dark:text-teal-200 dark:border-teal-800',
+        color: 'bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800/80',
         icon: TrendingUp,
       };
     case 'EMI_SELECTED':
       return {
         label: 'EMI Selected',
-        color: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800',
+        color: 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/80',
         icon: Calculator,
       };
     case 'BANK_ADDED':
       return {
         label: 'Bank Account Linked',
-        color: 'bg-cyan-100 text-cyan-900 border-cyan-300 dark:bg-cyan-950/60 dark:text-cyan-200 dark:border-cyan-800',
+        color: 'bg-cyan-50 text-cyan-800 border-cyan-200 dark:bg-cyan-950/60 dark:text-cyan-300 dark:border-cyan-800/80',
         icon: Landmark,
       };
     case 'DECLARATION_CONFIRMED':
     case 'SELFIE_PENDING':
       return {
         label: 'Selfie Pending',
-        color: 'bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/60 dark:text-purple-200 dark:border-purple-800',
+        color: 'bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/80',
         icon: Camera,
       };
     case 'WAITING_ADMIN_REVIEW':
       return {
         label: 'Waiting Admin Review',
-        color: 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800',
+        color: 'bg-amber-50 text-amber-800 border-amber-200 animate-pulse dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/80',
         icon: Clock,
       };
     case 'APPROVED':
       return {
         label: 'Approved (Ready)',
-        color: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800',
+        color: 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/80',
         icon: Check,
       };
     case 'DISBURSED':
       return {
         label: 'Funds Disbursed',
-        color: 'bg-emerald-600 text-white border-emerald-700 shadow-glow',
+        color: 'bg-emerald-600 text-white border-emerald-700 shadow-emerald-glow',
         icon: Banknote,
       };
     case 'REJECTED':
       return {
         label: 'Application Rejected',
-        color: 'bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800',
+        color: 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800/80',
         icon: AlertCircle,
       };
     default:
       return {
         label: 'Application Initiated',
-        color: 'bg-slate-100 text-slate-900 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700',
+        color: 'bg-slate-100 text-slate-900 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700',
         icon: Clock,
       };
   }
@@ -264,7 +265,7 @@ export function LoanStepper({
     <nav
       aria-label="Loan Onboarding Progress"
       className={cn(
-        'w-full rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-glass backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90 md:p-6',
+        'w-full rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-fintech backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/95 md:p-6',
         className
       )}
     >
@@ -288,14 +289,14 @@ export function LoanStepper({
         <div className="flex items-center space-x-3">
           <div className="hidden sm:block text-right">
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Progress</div>
-            <div className="text-sm font-bold text-slate-900 dark:text-white">
+            <div className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
               {progressPercent}% Complete
             </div>
           </div>
 
           <div
             className={cn(
-              'inline-flex items-center space-x-1.5 rounded-full border px-3 py-1 text-xs font-bold',
+              'inline-flex items-center space-x-1.5 rounded-full border px-3 py-1 text-xs font-bold shadow-xs',
               stageBadge.color
             )}
           >
@@ -307,7 +308,7 @@ export function LoanStepper({
 
       {/* Progress Bar Track */}
       <div
-        className="relative mb-6 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+        className="relative mb-6 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
         role="progressbar"
         aria-valuenow={progressPercent}
         aria-valuemin={0}
@@ -319,7 +320,7 @@ export function LoanStepper({
             'h-full transition-all duration-500 ease-out rounded-full',
             isRejected
               ? 'bg-rose-500'
-              : 'bg-gradient-to-r from-teal-500 via-emerald-500 to-emerald-600 shadow-glow'
+              : 'bg-gradient-to-r from-teal-500 via-emerald-500 to-emerald-600 shadow-emerald-glow'
           )}
           style={{ width: `${progressPercent}%` }}
         />
@@ -356,11 +357,11 @@ export function LoanStepper({
                       'border-emerald-600 bg-emerald-600 text-white shadow-xs',
                     isCurrent &&
                       !isStepRejected &&
-                      'border-emerald-600 bg-white text-emerald-700 ring-4 ring-emerald-500/25 shadow-glow dark:bg-slate-900 dark:text-emerald-400',
+                      'border-emerald-600 bg-white text-emerald-700 ring-4 ring-emerald-500/20 shadow-emerald-glow dark:bg-slate-900 dark:text-emerald-400',
                     isPending &&
                       'border-slate-300 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400',
                     isStepRejected &&
-                      'border-rose-600 bg-rose-600 text-white ring-4 ring-rose-500/25'
+                      'border-rose-600 bg-rose-600 text-white ring-4 ring-rose-500/20'
                   )}
                 >
                   {isCompleted ? (
@@ -391,7 +392,7 @@ export function LoanStepper({
                   >
                     {step.shortTitle}
                   </span>
-                  <span className="mt-0.5 hidden xl:block text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                  <span className="mt-0.5 hidden xl:block text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">
                     {step.description}
                   </span>
                 </div>

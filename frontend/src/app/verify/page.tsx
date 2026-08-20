@@ -117,10 +117,14 @@ export default function VerificationPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
     try {
-      await apiClient.post('/verification/email/send', {});
+      const res = await apiClient.post<any>('/verification/email/send', {});
       setEmailOtpSent(true);
-      setEmailCountdown(30);
-      setSuccessMessage(`Verification OTP sent to ${targetEmail}`);
+      setEmailCountdown(10);
+      const msg = res.message || res.data?.message || `Verification OTP sent to ${targetEmail}`;
+      setSuccessMessage(msg);
+      if (res.data?.devOtp) {
+        setEmailOtp(res.data.devOtp);
+      }
     } catch (err) {
       const { generalMessage } = extractFieldErrors(err, 'Failed to dispatch email OTP.');
       setErrorMessage(generalMessage);
@@ -171,10 +175,14 @@ export default function VerificationPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
     try {
-      await apiClient.post('/verification/phone/send', { phone: targetPhone });
+      const res = await apiClient.post<any>('/verification/phone/send', { phone: targetPhone });
       setPhoneOtpSent(true);
-      setPhoneCountdown(30);
-      setSuccessMessage(`Verification OTP sent to +91 ${targetPhone}`);
+      setPhoneCountdown(10);
+      const msg = res.message || res.data?.message || `Verification OTP sent to +91 ${targetPhone}`;
+      setSuccessMessage(msg);
+      if (res.data?.devOtp) {
+        setPhoneOtp(res.data.devOtp);
+      }
     } catch (err) {
       const { generalMessage } = extractFieldErrors(err, 'Failed to dispatch mobile phone OTP.');
       setErrorMessage(generalMessage);
@@ -224,13 +232,13 @@ export default function VerificationPage() {
         <div className="w-full max-w-lg space-y-6">
           {/* Header */}
           <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-900 to-emerald-600 shadow-md">
-              <ShieldCheck className="h-6 w-6 text-white" />
+            <div className="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-900 to-emerald-600 shadow-md">
+              <ShieldCheck className="h-7 w-7 text-white" />
             </div>
             <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               Two-Factor Identity Verification
             </h1>
-            <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">
+            <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto font-medium">
               Per RBI digital lending regulations, please verify both your email address and mobile phone number to secure your loan account.
             </p>
           </div>
@@ -238,18 +246,18 @@ export default function VerificationPage() {
           {/* Stepper Indicator */}
           <div className="grid grid-cols-2 gap-3">
             <div
-              className={`flex items-center space-x-2.5 rounded-xl border p-3 transition-all ${
+              className={`flex items-center space-x-3 rounded-2xl border p-3.5 transition-all ${
                 emailVerified
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200'
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200'
                   : activeStep === 'email'
-                  ? 'border-emerald-600 bg-white ring-2 ring-emerald-500/20 dark:bg-slate-900'
+                  ? 'border-emerald-600 bg-white ring-2 ring-emerald-500/20 dark:bg-slate-900 shadow-xs'
                   : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-950'
               }`}
             >
               <div
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                className={`flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black ${
                   emailVerified
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-emerald-600 text-white shadow-xs'
                     : activeStep === 'email'
                     ? 'bg-emerald-600 text-white'
                     : 'bg-slate-200 text-slate-600 dark:bg-slate-800'
@@ -261,25 +269,25 @@ export default function VerificationPage() {
                 <p className="text-xs font-bold leading-tight truncate">
                   Email Verification
                 </p>
-                <p className="text-[10px] text-slate-500 truncate">
+                <p className="text-[10px] text-slate-500 truncate font-medium">
                   {emailVerified ? 'Verified' : 'OTP Pending'}
                 </p>
               </div>
             </div>
 
             <div
-              className={`flex items-center space-x-2.5 rounded-xl border p-3 transition-all ${
+              className={`flex items-center space-x-3 rounded-2xl border p-3.5 transition-all ${
                 phoneVerified
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200'
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200'
                   : activeStep === 'phone'
-                  ? 'border-emerald-600 bg-white ring-2 ring-emerald-500/20 dark:bg-slate-900'
+                  ? 'border-emerald-600 bg-white ring-2 ring-emerald-500/20 dark:bg-slate-900 shadow-xs'
                   : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-950'
               }`}
             >
               <div
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                className={`flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black ${
                   phoneVerified
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-emerald-600 text-white shadow-xs'
                     : activeStep === 'phone'
                     ? 'bg-emerald-600 text-white'
                     : 'bg-slate-200 text-slate-600 dark:bg-slate-800'
@@ -291,7 +299,7 @@ export default function VerificationPage() {
                 <p className="text-xs font-bold leading-tight truncate">
                   Phone Verification
                 </p>
-                <p className="text-[10px] text-slate-500 truncate">
+                <p className="text-[10px] text-slate-500 truncate font-medium">
                   {phoneVerified ? 'Verified' : 'OTP Pending'}
                 </p>
               </div>
@@ -299,21 +307,21 @@ export default function VerificationPage() {
           </div>
 
           {/* Verification Body Card */}
-          <Card className="border-slate-200/80 shadow-glass backdrop-blur-md">
+          <Card className="border-slate-200/80 shadow-fintech backdrop-blur-xl rounded-3xl dark:border-slate-800/80">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
+                <CardTitle className="text-base font-black text-slate-900 dark:text-white">
                   {activeStep === 'email' && 'Step 1: Verify Email Address'}
                   {activeStep === 'phone' && 'Step 2: Verify Mobile Number'}
                   {activeStep === 'complete' && '2FA Verification Complete'}
                 </CardTitle>
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="text-[10px] font-bold">
                   {activeStep === 'email' && 'Email 2FA'}
                   {activeStep === 'phone' && 'Phone 2FA'}
                   {activeStep === 'complete' && 'Ready'}
                 </Badge>
               </div>
-              <CardDescription className="text-xs">
+              <CardDescription className="text-xs font-medium">
                 {activeStep === 'email' &&
                   `We will send a 6-digit confirmation code to ${targetEmail}`}
                 {activeStep === 'phone' &&
@@ -326,14 +334,14 @@ export default function VerificationPage() {
             <CardContent className="space-y-4">
               {/* Alert Banners */}
               {errorMessage && (
-                <div className="flex items-start space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+                <div className="flex items-start space-x-2.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300 font-bold animate-in fade-in-50">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-600 mt-0.5" />
                   <div className="flex-1">{errorMessage}</div>
                 </div>
               )}
 
               {successMessage && (
-                <div className="flex items-start space-x-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+                <div className="flex items-start space-x-2.5 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300 font-bold animate-in fade-in-50">
                   <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600 mt-0.5" />
                   <div className="flex-1">{successMessage}</div>
                 </div>
@@ -342,21 +350,21 @@ export default function VerificationPage() {
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-8 space-y-2">
                   <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-                  <p className="text-xs text-slate-500">Checking verification status...</p>
+                  <p className="text-xs text-slate-500 font-medium">Checking verification status...</p>
                 </div>
               ) : activeStep === 'email' ? (
                 /* Step 1: Email OTP Form */
                 <div className="space-y-4">
                   {!emailOtpSent ? (
                     <div className="space-y-3 text-center py-3">
-                      <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300">
-                        <Mail className="h-5 w-5" />
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300">
+                        <Mail className="h-6 w-6" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
                           {targetEmail}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 font-medium">
                           Click below to dispatch your email verification OTP.
                         </p>
                       </div>
@@ -364,7 +372,7 @@ export default function VerificationPage() {
                         type="button"
                         onClick={handleSendEmailOtp}
                         disabled={isSubmitting}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 shadow-sm"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 shadow-md shadow-emerald-950/10 rounded-xl"
                       >
                         {isSubmitting ? (
                           <>
@@ -379,8 +387,8 @@ export default function VerificationPage() {
                   ) : (
                     <form onSubmit={handleVerifyEmailOtp} className="space-y-4">
                       <div className="text-center space-y-1">
-                        <Label>Enter 6-Digit Email Verification Code</Label>
-                        <p className="text-[11px] text-slate-500">
+                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Enter 6-Digit Email Verification Code</Label>
+                        <p className="text-[11px] text-slate-500 font-medium">
                           We sent a security code to <strong className="text-slate-800 dark:text-slate-200">{targetEmail}</strong>.
                         </p>
                       </div>
@@ -395,7 +403,7 @@ export default function VerificationPage() {
                       <Button
                         type="submit"
                         disabled={isSubmitting || emailOtp.length < 6}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl shadow-md shadow-emerald-950/10"
                       >
                         {isSubmitting ? (
                           <>
@@ -419,7 +427,7 @@ export default function VerificationPage() {
                             setEmailOtp('');
                             setErrorMessage(null);
                           }}
-                          className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline"
+                          className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline cursor-pointer"
                         >
                           ← Change Email
                         </button>
@@ -428,7 +436,7 @@ export default function VerificationPage() {
                           type="button"
                           disabled={emailCountdown > 0 || isSubmitting}
                           onClick={handleSendEmailOtp}
-                          className="font-semibold text-emerald-600 hover:underline disabled:opacity-50 inline-flex items-center space-x-1"
+                          className="font-bold text-emerald-600 hover:underline disabled:opacity-50 inline-flex items-center space-x-1 cursor-pointer"
                         >
                           <RefreshCw className="h-3 w-3 mr-1" />
                           <span>
@@ -447,7 +455,7 @@ export default function VerificationPage() {
                   {!phoneOtpSent ? (
                     <div className="space-y-4">
                       <div className="space-y-1.5">
-                        <Label htmlFor="phoneInput" required>
+                        <Label htmlFor="phoneInput" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
                           Confirm Mobile Number
                         </Label>
                         <Input
@@ -457,7 +465,6 @@ export default function VerificationPage() {
                           maxLength={10}
                           value={targetPhone}
                           onChange={(e) => setTargetPhone(e.target.value)}
-                          icon={<Phone className="h-4 w-4" />}
                           disabled={isSubmitting}
                         />
                       </div>
@@ -466,7 +473,7 @@ export default function VerificationPage() {
                         type="button"
                         onClick={handleSendPhoneOtp}
                         disabled={isSubmitting || !targetPhone}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 shadow-sm"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 shadow-md shadow-emerald-950/10 rounded-xl"
                       >
                         {isSubmitting ? (
                           <>
@@ -481,8 +488,8 @@ export default function VerificationPage() {
                   ) : (
                     <form onSubmit={handleVerifyPhoneOtp} className="space-y-4">
                       <div className="text-center space-y-1">
-                        <Label>Enter 6-Digit SMS Code sent to +91 {targetPhone}</Label>
-                        <p className="text-[11px] text-slate-500">
+                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Enter 6-Digit SMS Code sent to +91 {targetPhone}</Label>
+                        <p className="text-[11px] text-slate-500 font-medium">
                           Security code sent via SMS. Valid for 10 minutes.
                         </p>
                       </div>
@@ -497,7 +504,7 @@ export default function VerificationPage() {
                       <Button
                         type="submit"
                         disabled={isSubmitting || phoneOtp.length < 6}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl shadow-md shadow-emerald-950/10"
                       >
                         {isSubmitting ? (
                           <>
@@ -521,7 +528,7 @@ export default function VerificationPage() {
                             setPhoneOtp('');
                             setErrorMessage(null);
                           }}
-                          className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline"
+                          className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline cursor-pointer"
                         >
                           ← Change Number
                         </button>
@@ -530,7 +537,7 @@ export default function VerificationPage() {
                           type="button"
                           disabled={phoneCountdown > 0 || isSubmitting}
                           onClick={handleSendPhoneOtp}
-                          className="font-semibold text-emerald-600 hover:underline disabled:opacity-50 inline-flex items-center space-x-1"
+                          className="font-bold text-emerald-600 hover:underline disabled:opacity-50 inline-flex items-center space-x-1 cursor-pointer"
                         >
                           <RefreshCw className="h-3 w-3 mr-1" />
                           <span>
@@ -545,20 +552,20 @@ export default function VerificationPage() {
                 </div>
               ) : (
                 /* Step 3: Complete State */
-                <div className="text-center py-6 space-y-3">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 shadow-glow">
-                    <Sparkles className="h-7 w-7" />
+                <div className="text-center py-6 space-y-4">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 shadow-glow">
+                    <Sparkles className="h-8 w-8" />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">
                     Verification Complete!
                   </h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                     Both email and phone number are authenticated. Taking you to the loan application...
                   </p>
                   <Button
                     type="button"
                     onClick={() => router.push('/apply')}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 h-11"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 h-12 rounded-xl"
                   >
                     Proceed to Application
                     <ArrowRight className="ml-2 h-4 w-4" />

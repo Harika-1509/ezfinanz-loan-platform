@@ -21,7 +21,7 @@ export class VerificationService {
     userId: string,
     emailOverride?: string,
     ipAddress?: string
-  ): Promise<{ target: string; expiresAt: Date; message: string }> {
+  ): Promise<{ target: string; expiresAt: Date; message: string; devOtp?: string }> {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw AppError.notFound('User account not found.');
@@ -57,7 +57,10 @@ export class VerificationService {
     return {
       target: result.identifier,
       expiresAt: result.expiresAt,
-      message: `Verification OTP has been sent to ${result.identifier}. Valid for 10 minutes.`,
+      devOtp: result.devOtp,
+      message: result.devOtp
+        ? `Verification OTP sent to ${result.identifier} [DEV CODE: ${result.devOtp}]`
+        : `Verification OTP has been sent to ${result.identifier}. Valid for 10 minutes.`,
     };
   }
 
@@ -122,7 +125,7 @@ export class VerificationService {
     userId: string,
     phoneInput?: string,
     ipAddress?: string
-  ): Promise<{ target: string; expiresAt: Date; message: string }> {
+  ): Promise<{ target: string; expiresAt: Date; message: string; devOtp?: string }> {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw AppError.notFound('User account not found.');
@@ -166,7 +169,10 @@ export class VerificationService {
     return {
       target: result.identifier,
       expiresAt: result.expiresAt,
-      message: `Verification OTP has been sent to mobile number ${result.identifier}. Valid for 10 minutes.`,
+      devOtp: result.devOtp,
+      message: result.devOtp
+        ? `Verification OTP sent to mobile number ${result.identifier} [DEV CODE: ${result.devOtp}]`
+        : `Verification OTP has been sent to mobile number ${result.identifier}. Valid for 10 minutes.`,
     };
   }
 

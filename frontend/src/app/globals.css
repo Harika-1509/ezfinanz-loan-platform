@@ -42,7 +42,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 160 84% 39%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
   }
 
   .dark {
@@ -83,9 +83,52 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased selection:bg-emerald-500 selection:text-white;
     font-feature-settings:
       'rlig' 1,
-      'calt' 1;
+      'calt' 1,
+      'tnum' 1;
   }
+}
+
+/* Custom FinTech Component Utilities */
+@layer utilities {
+  .shadow-fintech {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+  }
+  .shadow-fintech-md {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 24px -4px rgba(0, 0, 0, 0.04);
+  }
+  .shadow-fintech-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 20px 32px -6px rgba(0, 0, 0, 0.06);
+  }
+  .shadow-emerald-glow {
+    box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.35);
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .glass-card-dark {
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* Custom Scrollbar for FinTech Data Tables & Dialogs */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
 }
