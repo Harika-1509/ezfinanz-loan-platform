@@ -393,18 +393,23 @@ export function CustomerDashboard({
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 pb-16">
-      {/* 1. Header & Quick Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-            <Sparkles className="h-4 w-4" />
-            <span>BORROWER STATUS DASHBOARD</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            Loan Application Overview
-          </h1>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+    <div className="relative overflow-hidden min-h-screen">
+      {/* Background ambient lighting */}
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-80 w-[600px] rounded-full bg-emerald-500/10 blur-[100px]" />
+      <div className="pointer-events-none absolute top-96 right-0 h-64 w-64 rounded-full bg-teal-500/10 blur-[80px]" />
+
+      <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 pb-16">
+        {/* 1. Header & Quick Action Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <Sparkles className="h-4 w-4" />
+              <span>BORROWER STATUS DASHBOARD</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+              Loan Application Overview
+            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
             <span>Reference ID:</span>
             <button
               onClick={handleCopyAppId}
@@ -1290,5 +1295,6 @@ export function CustomerDashboard({
         </div>
       </div>
     </div>
+  </div>
   );
 }
