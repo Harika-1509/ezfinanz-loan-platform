@@ -266,74 +266,94 @@ export function AdminDashboard() {
       </div>
 
       {/* KPI Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4 items-stretch">
         {/* Total Apps */}
-        <Card className="border-slate-200/80 shadow-fintech dark:border-slate-800/80">
-          <CardContent className="p-5 space-y-2">
-            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Total Portfolio</span>
-              <Users className="h-4 w-4 text-slate-400" />
+        <Card className="rounded-2xl border-slate-200/80 bg-slate-50/50 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/40 flex flex-col justify-between">
+          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">Total Portfolio</span>
+              <div className="h-7 w-7 rounded-lg bg-slate-200/60 dark:bg-slate-800 flex items-center justify-center">
+                <Users className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300" />
+              </div>
             </div>
-            <p className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">
-              {stats ? stats.totalApplications : '—'}
-            </p>
-            <p className="text-[11px] text-slate-500 font-medium">Lifetime user applications</p>
+            <div>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
+                {stats ? stats.totalApplications : '0'}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-none">Lifetime applications</p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Needs Review */}
-        <Card className="border-amber-200/80 bg-amber-50/40 shadow-fintech dark:border-amber-900/40 dark:bg-amber-950/20">
-          <CardContent className="p-5 space-y-2">
-            <div className="flex items-center justify-between text-amber-800 dark:text-amber-400">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Action Required</span>
-              <Clock className="h-4 w-4 text-amber-600 animate-spin" />
+        <Card className="rounded-2xl border-amber-300/70 bg-amber-50/60 shadow-xs dark:border-amber-900/50 dark:bg-amber-950/20 flex flex-col justify-between">
+          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between text-amber-800 dark:text-amber-300">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">Action Required</span>
+              <div className="h-7 w-7 rounded-lg bg-amber-200/70 dark:bg-amber-900/60 flex items-center justify-center">
+                <Clock className="h-3.5 w-3.5 text-amber-700 dark:text-amber-300" />
+              </div>
             </div>
-            <p className="text-2xl font-black text-amber-950 dark:text-amber-200 tabular-nums">
-              {stats ? stats.waitingReview : '—'}
-            </p>
-            <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">Waiting Selfie & KYC Review</p>
+            <div>
+              <p className="text-2xl sm:text-3xl font-black text-amber-950 dark:text-amber-200 tabular-nums tracking-tight">
+                {stats ? stats.waitingReview : '0'}
+              </p>
+              <p className="mt-1 text-[11px] text-amber-800 dark:text-amber-300/90 font-medium leading-none">Waiting KYC & review</p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Approved */}
-        <Card className="border-emerald-200/80 bg-emerald-50/40 shadow-fintech dark:border-emerald-900/40 dark:bg-emerald-950/20">
-          <CardContent className="p-5 space-y-2">
-            <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-400">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Approved Queue</span>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+        <Card className="rounded-2xl border-emerald-300/70 bg-emerald-50/60 shadow-xs dark:border-emerald-900/50 dark:bg-emerald-950/20 flex flex-col justify-between">
+          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">Approved Queue</span>
+              <div className="h-7 w-7 rounded-lg bg-emerald-200/70 dark:bg-emerald-900/60 flex items-center justify-center">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-300" />
+              </div>
             </div>
-            <p className="text-2xl font-black text-emerald-950 dark:text-emerald-200 tabular-nums">
-              {stats ? stats.approved : '—'}
-            </p>
-            <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">Ready for disbursement</p>
+            <div>
+              <p className="text-2xl sm:text-3xl font-black text-emerald-950 dark:text-emerald-200 tabular-nums tracking-tight">
+                {stats ? stats.approved : '0'}
+              </p>
+              <p className="mt-1 text-[11px] text-emerald-800 dark:text-emerald-300/90 font-medium leading-none">Ready for disbursement</p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Disbursed */}
-        <Card className="border-cyan-200/80 bg-cyan-50/40 shadow-fintech dark:border-cyan-900/40 dark:bg-cyan-950/20">
-          <CardContent className="p-5 space-y-2">
-            <div className="flex items-center justify-between text-cyan-800 dark:text-cyan-400">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Active Loans</span>
-              <Landmark className="h-4 w-4 text-cyan-600" />
+        <Card className="rounded-2xl border-cyan-300/70 bg-cyan-50/60 shadow-xs dark:border-cyan-900/50 dark:bg-cyan-950/20 flex flex-col justify-between">
+          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between text-cyan-800 dark:text-cyan-300">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">Active Loans</span>
+              <div className="h-7 w-7 rounded-lg bg-cyan-200/70 dark:bg-cyan-900/60 flex items-center justify-center">
+                <Landmark className="h-3.5 w-3.5 text-cyan-700 dark:text-cyan-300" />
+              </div>
             </div>
-            <p className="text-2xl font-black text-cyan-950 dark:text-cyan-200 tabular-nums">
-              {stats ? stats.disbursed : '—'}
-            </p>
-            <p className="text-[11px] text-cyan-800 dark:text-cyan-300 font-medium">Successfully credited</p>
+            <div>
+              <p className="text-2xl sm:text-3xl font-black text-cyan-950 dark:text-cyan-200 tabular-nums tracking-tight">
+                {stats ? stats.disbursed : '0'}
+              </p>
+              <p className="mt-1 text-[11px] text-cyan-800 dark:text-cyan-300/90 font-medium leading-none">Successfully credited</p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Disbursed Volume */}
-        <Card className="border-slate-800 bg-slate-900 text-white shadow-xl dark:border-slate-700 col-span-2 lg:col-span-1 rounded-2xl">
-          <CardContent className="p-5 space-y-2">
+        <Card className="rounded-2xl border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 text-white shadow-md dark:border-slate-700 col-span-2 lg:col-span-1 flex flex-col justify-between">
+          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
             <div className="flex items-center justify-between text-emerald-400">
-              <span className="text-[11px] font-bold uppercase tracking-wider">Disbursed Volume</span>
-              <Banknote className="h-4 w-4" />
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">Disbursed Volume</span>
+              <div className="h-7 w-7 rounded-lg bg-emerald-900/60 border border-emerald-500/30 flex items-center justify-center">
+                <Banknote className="h-3.5 w-3.5 text-emerald-400" />
+              </div>
             </div>
-            <p className="text-xl font-black text-white truncate tabular-nums">
-              {stats ? formatCurrency(stats.totalDisbursedAmount) : '—'}
-            </p>
-            <p className="text-[11px] text-slate-400 font-medium">Total credited funds</p>
+            <div>
+              <p className="text-xl sm:text-2xl font-black text-white truncate tabular-nums tracking-tight">
+                {stats ? formatCurrency(stats.totalDisbursedAmount) : '₹0'}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-400 font-medium leading-none">Total credited funds</p>
+            </div>
           </CardContent>
         </Card>
       </div>

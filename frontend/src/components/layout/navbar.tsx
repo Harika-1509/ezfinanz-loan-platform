@@ -20,6 +20,7 @@ import {
 import { useAuth } from '../../contexts/auth-context';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { BrandLogo } from '../ui/brand-logo';
 
 export function Navbar() {
   const { user, role, isAuthenticated, logout } = useAuth();
@@ -32,27 +33,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/90 shadow-xs">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo */}
-        <Link
-          href="/"
-          className="flex items-center space-x-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 rounded-xl"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-slate-900 via-emerald-950 to-emerald-600 shadow-md shadow-emerald-950/20 transition-all duration-200 group-hover:scale-105 group-hover:shadow-emerald-600/20">
-            <Sparkles className="h-5 w-5 text-emerald-400" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-1.5">
-              <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-                EZ<span className="text-emerald-600">Finanz</span>
-              </span>
-              <span className="rounded-full bg-emerald-100/80 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                PRO
-              </span>
-            </div>
-            <p className="text-[10px] font-semibold tracking-tight text-slate-400 dark:text-slate-500">
-              Digital Lending & Underwriting
-            </p>
-          </div>
-        </Link>
+        <BrandLogo />
 
         {/* Center Nav Links (Desktop) */}
         <nav className="hidden md:flex items-center space-x-1 text-sm font-semibold" aria-label="Main Navigation">

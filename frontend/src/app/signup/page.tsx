@@ -26,6 +26,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card';
 import { GuestRoute } from '../../components/auth/route-guards';
+import { BrandLogo } from '../../components/ui/brand-logo';
 
 export default function SignupPage() {
   const { signup } = useAuth();
@@ -109,17 +110,13 @@ export default function SignupPage() {
       <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-6">
           {/* Brand Header */}
-          <div className="text-center">
-            <Link href="/" className="inline-flex items-center space-x-2 group">
-              <div className="flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-900 via-teal-900 to-emerald-600 shadow-md transition-transform group-hover:scale-105">
-                <Sparkles className="h-6 w-6 text-emerald-400" />
-              </div>
-            </Link>
+          <div className="text-center flex flex-col items-center">
+            <BrandLogo size="lg" />
             <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               Create Your Application
             </h1>
             <p className="mt-1 text-xs text-slate-500 font-medium">
-              Apply for instant personal loan up to ₹10 Lakhs in minutes.
+              Apply for instant personal loan up to ₹5 Lakhs in minutes.
             </p>
           </div>
 

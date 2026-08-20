@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldCheck, Lock, Landmark, FileCheck2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { BrandLogo } from '../ui/brand-logo';
 
 export function Footer() {
   return (
@@ -59,14 +60,7 @@ export function Footer() {
 
         {/* Brand & Regulatory Notice */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center space-x-2.5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-600 text-white">
-              <Sparkles className="h-3.5 w-3.5" />
-            </div>
-            <p className="font-semibold text-slate-700 dark:text-slate-300">
-              EZFinanz Pro Digital Lending Platform
-            </p>
-          </div>
+          <BrandLogo size="sm" showTagline={false} />
 
           <div className="flex flex-wrap items-center justify-center gap-6 font-medium">
             <Link
