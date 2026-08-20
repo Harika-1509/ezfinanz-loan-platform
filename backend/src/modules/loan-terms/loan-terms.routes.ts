@@ -14,15 +14,15 @@ router.use(authGuard);
 
 router.post(
   '/calculate',
-  stageGuard(ApplicationStage.ELIGIBILITY_CHECKED, ApplicationStage.EMI_SELECTED),
   validate(loanTermsCalculationSchema),
+  stageGuard(ApplicationStage.ELIGIBILITY_CHECKED, ApplicationStage.EMI_SELECTED),
   loanTermsController.calculateTerms
 );
 
 router.post(
   '/confirm',
-  stageGuard(ApplicationStage.ELIGIBILITY_CHECKED, ApplicationStage.EMI_SELECTED),
   validate(loanTermsConfirmSchema),
+  stageGuard(ApplicationStage.ELIGIBILITY_CHECKED, ApplicationStage.EMI_SELECTED),
   loanTermsController.confirmTerms
 );
 

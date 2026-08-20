@@ -1,6 +1,16 @@
 import { z } from 'zod';
 import { ApplicationStage } from '@prisma/client';
 
+export const applicationIdParamSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Application ID parameter is required'),
+  }),
+};
+
+export type ApplicationIdParam = z.infer<
+  typeof applicationIdParamSchema.params
+>;
+
 export const listApplicationsSchema = {
   query: z.object({
     page: z
@@ -24,6 +34,9 @@ export type ListApplicationsQuery = z.infer<
 >;
 
 export const reviewSelfieSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Application ID parameter is required'),
+  }),
   body: z.object({
     action: z.enum(['APPROVE', 'REJECT'], {
       required_error: "Action is required and must be either 'APPROVE' or 'REJECT'",
@@ -39,6 +52,9 @@ export const reviewSelfieSchema = {
 export type ReviewSelfieInput = z.infer<typeof reviewSelfieSchema.body>;
 
 export const rejectSelfieSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Application ID parameter is required'),
+  }),
   body: z.object({
     reason: z
       .string({ required_error: 'Rejection reason is required' })
@@ -51,6 +67,9 @@ export const rejectSelfieSchema = {
 export type RejectSelfieInput = z.infer<typeof rejectSelfieSchema.body>;
 
 export const disburseLoanSchema = {
+  params: z.object({
+    id: z.string().min(1, 'Application ID parameter is required'),
+  }),
   body: z
     .object({
       referenceId: z.string().trim().optional(),

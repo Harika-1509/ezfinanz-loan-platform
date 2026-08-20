@@ -37,17 +37,23 @@ export const kycSubmissionSchema = {
         .refine((val) => calculateAge(val) >= 18, {
           message: 'Applicant must be at least 18 years old to apply for a loan',
         }),
-      gender: z.enum(['MALE', 'FEMALE', 'OTHER'], {
-        required_error: 'Gender is required (MALE, FEMALE, or OTHER)',
-      }),
+      gender: z.preprocess(
+        (val) => (typeof val === 'string' ? val.trim().toUpperCase() : val),
+        z.enum(['MALE', 'FEMALE', 'OTHER'], {
+          required_error: 'Gender is required (MALE, FEMALE, or OTHER)',
+        })
+      ),
       address: z
         .string({ required_error: 'Current residential address is required' })
         .trim()
         .min(5, 'Address must be at least 5 characters')
         .max(300, 'Address cannot exceed 300 characters'),
-      idType: z.nativeEnum(IdType, {
-        required_error: 'ID type is required (PAN or AADHAAR)',
-      }),
+      idType: z.preprocess(
+        (val) => (typeof val === 'string' ? val.trim().toUpperCase() : val),
+        z.nativeEnum(IdType, {
+          required_error: 'ID type is required (PAN or AADHAAR)',
+        })
+      ),
       idNumber: z
         .string({ required_error: 'ID number is required' })
         .trim()

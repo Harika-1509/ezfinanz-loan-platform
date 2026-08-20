@@ -15,16 +15,18 @@ export const validate = (schema: ValidationSchema) => {
         req.body = await schema.body.parseAsync(req.body);
       }
       if (schema.query) {
-        req.query = await schema.query.parseAsync(req.query);
+        const parsedQuery = await schema.query.parseAsync(req.query);
+        req.query = parsedQuery;
       }
       if (schema.params) {
-        req.params = await schema.params.parseAsync(req.params);
+        const parsedParams = await schema.params.parseAsync(req.params);
+        req.params = parsedParams;
       }
       next();
     } catch (error) {
       if (error instanceof ZodError) {
         const formattedErrors = error.errors.map((err) => ({
-          path: err.path.join('.'),
+          path: err.path.length > 0 ? err.path.join('.') : '_form',
           message: err.message,
           code: err.code,
         }));

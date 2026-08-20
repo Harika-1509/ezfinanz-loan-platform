@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { ApplicationStage } from '@prisma/client';
 import { selfieController } from './selfie.controller';
-import { authGuard, stageGuard, upload } from '../../shared/middleware';
+import { selfieSubmissionSchema } from './selfie.schema';
+import { authGuard, stageGuard, upload, validate } from '../../shared/middleware';
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.post(
     ApplicationStage.REJECTED
   ),
   upload.single('selfie') as any,
+  validate(selfieSubmissionSchema),
   selfieController.submitSelfie
 );
 
