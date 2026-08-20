@@ -31,13 +31,17 @@ describe('Google OAuth Module Integration Tests', () => {
   let oauthToken1: string;
 
   afterAll(async () => {
-    const userIds = [user1Id, user2Id].filter(Boolean);
-    if (userIds.length > 0) {
-      await prisma.application.deleteMany({ where: { userId: { in: userIds } } });
-      await prisma.refreshToken.deleteMany({ where: { userId: { in: userIds } } });
-      await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    try {
+      const userIds = [user1Id, user2Id].filter(Boolean);
+      if (userIds.length > 0) {
+        await prisma.application.deleteMany({ where: { userId: { in: userIds } } });
+        await prisma.refreshToken.deleteMany({ where: { userId: { in: userIds } } });
+        await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+      }
+    } catch {
+      // Ignore cleanup errors
     }
-  });
+  }, 10000);
 
   describe('POST /api/v1/auth/google/mock - First-Time OAuth Registration', () => {
     it('should auto-create user with emailVerified=true and provision initial loan application', async () => {

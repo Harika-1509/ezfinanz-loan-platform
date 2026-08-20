@@ -38,15 +38,15 @@ function sanitizeDatabaseUrl(url: string): string {
         parsed.searchParams.set('sslmode', 'require');
       }
 
-      // 5. Set sensible connection pool limits to avoid stale connections
+      // 5. Set sensible connection pool limits to avoid stale connections & transaction timeouts
       if (!parsed.searchParams.has('connection_limit')) {
-        parsed.searchParams.set('connection_limit', '10');
+        parsed.searchParams.set('connection_limit', '25');
       }
       if (!parsed.searchParams.has('pool_timeout')) {
-        parsed.searchParams.set('pool_timeout', '20');
+        parsed.searchParams.set('pool_timeout', '60');
       }
       if (!parsed.searchParams.has('connect_timeout')) {
-        parsed.searchParams.set('connect_timeout', '15');
+        parsed.searchParams.set('connect_timeout', '30');
       }
     }
 

@@ -423,34 +423,27 @@ export class AdminService {
     const targetStage = isApproved
       ? ApplicationStage.APPROVED
       : ApplicationStage.REJECTED;
+    let updatedSelfie = null;
+    if (app.selfie) {
+      updatedSelfie = await prisma.selfie.update({
+        where: { id: app.selfie.id },
+        data: {
+          adminStatus: targetStatus,
+          reviewedBy: adminUserId,
+          reviewedAt,
+          rejectReason: isApproved
+            ? null
+            : reason || 'Document or photo verification failed',
+        },
+      });
+    }
 
-    const { updatedApp, updatedSelfie } = await prisma.$transaction(
-      async (tx) => {
-        let selfie = null;
-        if (app.selfie) {
-          selfie = await tx.selfie.update({
-            where: { id: app.selfie.id },
-            data: {
-              adminStatus: targetStatus,
-              reviewedBy: adminUserId,
-              reviewedAt,
-              rejectReason: isApproved
-                ? null
-                : reason || 'Document or photo verification failed',
-            },
-          });
-        }
-
-        const application = await tx.application.update({
-          where: { id: applicationId },
-          data: {
-            stage: targetStage,
-          },
-        });
-
-        return { updatedApp: application, updatedSelfie: selfie };
-      }
-    );
+    const updatedApp = await prisma.application.update({
+      where: { id: applicationId },
+      data: {
+        stage: targetStage,
+      },
+    });
 
     // Send asynchronous status update email to borrower if email exists
     if (app.user.email) {
