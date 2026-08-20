@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { Role } from '@prisma/client';
 import { adminController } from './admin.controller';
 import {
+  applicationIdParamSchema,
   listApplicationsSchema,
   reviewSelfieSchema,
   rejectSelfieSchema,
@@ -22,7 +23,11 @@ router.get(
   adminController.listApplications
 );
 
-router.get('/applications/:id', adminController.getApplicationDetail);
+router.get(
+  '/applications/:id',
+  validate(applicationIdParamSchema),
+  adminController.getApplicationDetail
+);
 
 router.get('/stats', adminController.getDashboardStats);
 
@@ -35,6 +40,7 @@ router.post(
 
 router.post(
   '/applications/:id/selfie/approve',
+  validate(applicationIdParamSchema),
   adminController.approveSelfie
 );
 

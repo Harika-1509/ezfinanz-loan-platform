@@ -31,7 +31,7 @@ export const otpSendLimiter = rateLimit({
   max: config.NODE_ENV === 'production' ? 10 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => isDevOrTest(req as Request),
+  skip: (req) => isDevOrTest(req as unknown as Request),
   handler: (_req, res) => {
     sendError(
       res as any,
@@ -51,7 +51,7 @@ export const authLimiter = rateLimit({
   max: config.NODE_ENV === 'production' ? 60 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => isDevOrTest(req as Request),
+  skip: (req) => isDevOrTest(req as unknown as Request),
   handler: (_req, res) => {
     sendError(
       res as any,

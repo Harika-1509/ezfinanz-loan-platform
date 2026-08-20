@@ -36,6 +36,16 @@ export const errorHandler = (
     return sendError(res, 'The requested record could not be found.', 404, 'NOT_FOUND');
   }
 
+  // Prisma Connection / Closed Socket Errors (P1001, P1017, etc.)
+  if ('code' in err && (err.code === 'P1001' || err.code === 'P1017')) {
+    return sendError(
+      res,
+      'Database connection is temporarily re-establishing. Please retry your request.',
+      503,
+      'DATABASE_UNAVAILABLE'
+    );
+  }
+
   // Handle SyntaxError / JSON parse errors
   if (err instanceof SyntaxError && 'status' in err && (err as any).status === 400) {
     return sendError(res, 'Malformed JSON payload in request', 400, 'INVALID_JSON');

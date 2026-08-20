@@ -497,7 +497,7 @@ export class AdminService {
             reviewedAt: updatedSelfie.reviewedAt,
             rejectReason: updatedSelfie.rejectReason,
           }
-        : null,
+        : (null as any),
       message,
     };
   }
