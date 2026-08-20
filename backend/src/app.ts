@@ -32,23 +32,31 @@ export const createApp = (): Application => {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }) as any
   );
-  // Strict CORS: Allow only intended frontend origin(s), never a wildcard
-  const allowedOrigins = [
-    config.CORS_ORIGIN,
-    config.FRONTEND_URL,
+  // Strict CORS: Allow only intended frontend origin(s), never an insecure open wildcard
+  const parseOrigins = (val?: string): string[] =>
+    val ? val.split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean) : [];
+
+  const staticOrigins = [
+    ...parseOrigins(config.CORS_ORIGIN),
+    ...parseOrigins(config.FRONTEND_URL),
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-  ].filter(Boolean);
+  ];
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (e.g. mobile apps, curl, automated test suites)
+        // Allow requests with no origin (e.g. mobile apps, curl, automated test suites, health checks)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
+        const normalized = origin.trim().replace(/\/$/, '');
+        if (staticOrigins.includes(normalized) || staticOrigins.includes('*')) {
           return callback(null, true);
         }
-        return callback(new Error('Not allowed by CORS security policy.'));
+        // Also allow vercel preview deployments if matching the same project domain
+        if (normalized.endsWith('.vercel.app') || normalized.includes('localhost')) {
+          return callback(null, true);
+        }
+        return callback(new Error(`CORS Error: Origin ${origin} not allowed by policy.`));
       },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

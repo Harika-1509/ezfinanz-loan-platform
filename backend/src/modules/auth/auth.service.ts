@@ -498,7 +498,7 @@ export class AuthService {
   public async sendLoginOtp(
     input: SendAuthOtpInput,
     ipAddress?: string
-  ): Promise<{ target: string; expiresAt: Date; message: string }> {
+  ): Promise<{ target: string; expiresAt: Date; message: string; devOtp?: string }> {
     const phone = input.phone.trim();
     const purpose = OtpPurpose.LOGIN;
 
