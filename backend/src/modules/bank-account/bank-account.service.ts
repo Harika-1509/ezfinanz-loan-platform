@@ -35,33 +35,28 @@ export class BankAccountService {
       );
     }
 
-    const { savedAccount, updatedApp } = await prisma.$transaction(
-      async (tx) => {
-        const bank = await tx.bankAccount.upsert({
-          where: { applicationId: application.id },
-          create: {
-            applicationId: application.id,
-            holderName: input.holderName,
-            accountNumber: input.accountNumber,
-            ifsc: input.ifsc,
-            bankName: input.bankName,
-          },
-          update: {
-            holderName: input.holderName,
-            accountNumber: input.accountNumber,
-            ifsc: input.ifsc,
-            bankName: input.bankName,
-          },
-        });
-
-        const app = await tx.application.update({
-          where: { id: application.id },
-          data: { stage: ApplicationStage.BANK_ADDED },
-        });
-
-        return { savedAccount: bank, updatedApp: app };
-      }
-    );
+    const [savedAccount, updatedApp] = await prisma.$transaction([
+      prisma.bankAccount.upsert({
+        where: { applicationId: application.id },
+        create: {
+          applicationId: application.id,
+          holderName: input.holderName,
+          accountNumber: input.accountNumber,
+          ifsc: input.ifsc,
+          bankName: input.bankName,
+        },
+        update: {
+          holderName: input.holderName,
+          accountNumber: input.accountNumber,
+          ifsc: input.ifsc,
+          bankName: input.bankName,
+        },
+      }),
+      prisma.application.update({
+        where: { id: application.id },
+        data: { stage: ApplicationStage.BANK_ADDED },
+      }),
+    ]);
 
     return {
       bankAccount: savedAccount,

@@ -140,31 +140,26 @@ export class DeclarationService {
       );
     }
 
-    const { savedDeclaration, updatedApp } = await prisma.$transaction(
-      async (tx) => {
-        const decl = await tx.declaration.upsert({
-          where: { applicationId: application.id },
-          create: {
-            applicationId: application.id,
-            acceptedAt: new Date(),
-            termsVersion: input.termsVersion || 'v1.0',
-            ipAddress: ipAddress || null,
-          },
-          update: {
-            acceptedAt: new Date(),
-            termsVersion: input.termsVersion || 'v1.0',
-            ipAddress: ipAddress || null,
-          },
-        });
-
-        const app = await tx.application.update({
-          where: { id: application.id },
-          data: { stage: ApplicationStage.DECLARATION_CONFIRMED },
-        });
-
-        return { savedDeclaration: decl, updatedApp: app };
-      }
-    );
+    const [savedDeclaration, updatedApp] = await prisma.$transaction([
+      prisma.declaration.upsert({
+        where: { applicationId: application.id },
+        create: {
+          applicationId: application.id,
+          acceptedAt: new Date(),
+          termsVersion: input.termsVersion || 'v1.0',
+          ipAddress: ipAddress || null,
+        },
+        update: {
+          acceptedAt: new Date(),
+          termsVersion: input.termsVersion || 'v1.0',
+          ipAddress: ipAddress || null,
+        },
+      }),
+      prisma.application.update({
+        where: { id: application.id },
+        data: { stage: ApplicationStage.DECLARATION_CONFIRMED },
+      }),
+    ]);
 
     return {
       declaration: savedDeclaration,

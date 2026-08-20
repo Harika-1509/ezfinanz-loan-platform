@@ -110,7 +110,7 @@ export function KycForm({ onSuccess }: KycFormProps) {
         formData.append('address', address);
         formData.append('idType', idType);
         formData.append('idNumber', idNumber.toUpperCase());
-        formData.append('file', uploadFile);
+        formData.append('idPhoto', uploadFile);
 
         await apiClient.upload('/kyc/submit', formData);
       } else {

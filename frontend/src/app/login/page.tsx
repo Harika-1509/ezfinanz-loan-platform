@@ -193,7 +193,7 @@ export default function LoginPage() {
 
   const fillAdminDemo = () => {
     setEmail('admin@ezfinanz.com');
-    setPassword('Password@123');
+    setPassword('AdminPassword@123');
     setAuthMode('password');
     setFieldErrors({});
   };

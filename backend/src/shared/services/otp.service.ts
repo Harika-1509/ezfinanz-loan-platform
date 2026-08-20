@@ -152,8 +152,8 @@ export class ProductionOtpService {
     const rawOtp = this.generateSecure6DigitCode();
     const otpHash = this.hashOtp(normalizedIdentifier, rawOtp);
 
-    // Store in test harness strictly during test runs
-    if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
+    // Store in test harness during non-production runs (dev & test)
+    if (process.env.NODE_ENV !== 'production') {
       this.testOtpHarness.set(`${normalizedIdentifier}:${purpose}`, rawOtp);
     }
 
@@ -308,7 +308,7 @@ export class ProductionOtpService {
    * Test Harness helper: Retrieves the dynamically generated OTP strictly when running in test environment.
    */
   public getTestGeneratedOtp(identifier: string, purpose: string = 'LOGIN'): string | null {
-    if (process.env.NODE_ENV !== 'test' && process.env.VITEST !== 'true') {
+    if (process.env.NODE_ENV === 'production') {
       return null;
     }
     const isEmail = identifier.includes('@');

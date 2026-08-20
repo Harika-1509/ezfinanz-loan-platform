@@ -94,4 +94,9 @@ router.get('/my-application', authGuard, (req, res, next) =>
   authController.getMyApplication(req, res, next)
 );
 
+// Dev / Test OTP extraction endpoint (strictly non-production)
+router.get('/dev/latest-otp', (req, res, next) =>
+  authController.getDevLatestOtp(req, res, next)
+);
+
 export default router;

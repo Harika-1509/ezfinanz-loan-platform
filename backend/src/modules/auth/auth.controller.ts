@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService, AuthResult } from './auth.service';
 import { sendSuccess } from '../../shared/utils/api-response';
+import { otpService } from '../../shared/services/otp.service';
+import { emailService } from '../../shared/services/email.service';
 import config from '../../config';
 
 const REFRESH_COOKIE_OPTIONS = {
@@ -210,6 +212,43 @@ export class AuthController {
     try {
       const result = await authService.getMyApplicationDetails(req.user!.userId);
       sendSuccess(res, result, 'Customer loan application details retrieved successfully.');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/v1/auth/dev/latest-otp?identifier=...
+   * Strictly disabled in production. Returns latest OTP for automated E2E testing.
+   */
+  public async getDevLatestOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (config.NODE_ENV === 'production') {
+        res.status(403).json({ success: false, message: 'Forbidden' });
+        return;
+      }
+      const identifier = String(req.query.identifier || '').trim();
+      const purpose = String(req.query.purpose || '');
+
+      let otp: string | null = null;
+      // 1. Try OTP service in-memory test harness
+      otp =
+        otpService.getTestGeneratedOtp(identifier, purpose) ||
+        otpService.getTestGeneratedOtp(identifier, 'EMAIL_VERIFICATION') ||
+        otpService.getTestGeneratedOtp(identifier, 'PHONE_VERIFICATION') ||
+        otpService.getTestGeneratedOtp(identifier, 'LOGIN');
+
+      // 2. Fallback to sent emails log
+      if (!otp && identifier.includes('@')) {
+        const sentEmails = emailService.getSentEmails(identifier);
+        if (sentEmails.length > 0) {
+          const latest = sentEmails[sentEmails.length - 1];
+          const match = latest.text?.match(/\b(\d{6})\b/) || latest.subject.match(/\b(\d{6})\b/);
+          if (match) otp = match[1];
+        }
+      }
+
+      sendSuccess(res, { identifier, otp }, 'Latest dev OTP fetched', 200);
     } catch (error) {
       next(error);
     }

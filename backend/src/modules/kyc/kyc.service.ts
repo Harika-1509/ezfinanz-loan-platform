@@ -67,8 +67,8 @@ export class KycService {
     }
 
     // 5. Save KYC details and advance application stage in an atomic transaction
-    const { savedKyc, updatedApp } = await prisma.$transaction(async (tx) => {
-      const kyc = await tx.kycDetails.upsert({
+    const [savedKyc, updatedApp] = await prisma.$transaction([
+      prisma.kycDetails.upsert({
         where: { applicationId: application.id },
         create: {
           applicationId: application.id,
@@ -89,15 +89,12 @@ export class KycService {
           idNumber: cleanedIdNumber,
           idPhotoUrl: idPhotoUrl || undefined,
         },
-      });
-
-      const app = await tx.application.update({
+      }),
+      prisma.application.update({
         where: { id: application.id },
         data: { stage: ApplicationStage.KYC_SUBMITTED },
-      });
-
-      return { savedKyc: kyc, updatedApp: app };
-    });
+      }),
+    ]);
 
     return {
       kycDetails: savedKyc,

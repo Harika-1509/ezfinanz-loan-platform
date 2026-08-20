@@ -126,31 +126,26 @@ export class SelfieService {
     );
 
     // Save to database & advance lifecycle stage
-    const { savedSelfie, updatedApp } = await prisma.$transaction(
-      async (tx) => {
-        const selfieRecord = await tx.selfie.upsert({
-          where: { applicationId: application.id },
-          create: {
-            applicationId: application.id,
-            photoUrl: uploadResult.url,
-            adminStatus: AdminReviewStatus.PENDING,
-            submittedAt: new Date(),
-          },
-          update: {
-            photoUrl: uploadResult.url,
-            adminStatus: AdminReviewStatus.PENDING,
-            submittedAt: new Date(),
-          },
-        });
-
-        const appRecord = await tx.application.update({
-          where: { id: application.id },
-          data: { stage: ApplicationStage.WAITING_ADMIN_REVIEW },
-        });
-
-        return { savedSelfie: selfieRecord, updatedApp: appRecord };
-      }
-    );
+    const [savedSelfie, updatedApp] = await prisma.$transaction([
+      prisma.selfie.upsert({
+        where: { applicationId: application.id },
+        create: {
+          applicationId: application.id,
+          photoUrl: uploadResult.url,
+          adminStatus: AdminReviewStatus.PENDING,
+          submittedAt: new Date(),
+        },
+        update: {
+          photoUrl: uploadResult.url,
+          adminStatus: AdminReviewStatus.PENDING,
+          submittedAt: new Date(),
+        },
+      }),
+      prisma.application.update({
+        where: { id: application.id },
+        data: { stage: ApplicationStage.WAITING_ADMIN_REVIEW },
+      }),
+    ]);
 
     return {
       selfie: savedSelfie,
