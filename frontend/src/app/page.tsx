@@ -243,7 +243,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. Interactive Multi-Step Stepper Playground */}
+      {/* 
+        DEVELOPER PLAYGROUND & DEBUG DEMONSTRATORS (COMMENTED OUT FOR CLEAN USER INTERFACE)
+        =================================================================================
+        Uncomment the sections below if interactive state simulation is needed:
+        - Interactive Multi-Step Stepper Playground
+        - Auth Context Simulator & Session State Monitor
+        - Backend Service Live Health Checker
+      */}
+      {/* 
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -259,145 +267,27 @@ export default function HomePage() {
               updates stepper progress, badges, and step states.
             </p>
           </div>
-
-          {/* Interactive Stage Selector Controls */}
-          <div className="flex items-center space-x-2">
-            <label htmlFor="preview-stage-select" className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Preview Stage:
-            </label>
-            <select
-              id="preview-stage-select"
-              aria-label="Preview onboarding stage"
-              value={previewStage}
-              onChange={(e) =>
-                handleStageSelect(e.target.value as ApplicationStage)
-              }
-              className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-xs focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-            >
-              {DEMO_STAGES.map((s) => (
-                <option key={s.stage} value={s.stage}>
-                  {s.label} ({s.stage})
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
-        {/* Live Stepper Component */}
         <LoanStepper
           currentStage={previewStage}
           activeStep={selectedStepIndex}
           onStepClick={(stepIdx) => setSelectedStepIndex(stepIdx)}
         />
-
-        {/* Stage Selection Pills */}
-        <div className="mt-4 flex flex-wrap gap-2 pt-2">
-          {DEMO_STAGES.map((s) => (
-            <button
-              key={s.stage}
-              onClick={() => handleStageSelect(s.stage)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 cursor-pointer ${
-                previewStage === s.stage
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200'
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
       </section>
 
-      {/* 3. Auth State Context & Route Protection Demonstrator */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left: Interactive Session Simulator */}
           <Card className="border-slate-200/80 shadow-fintech rounded-2xl">
             <CardHeader>
-              <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
-                <User className="h-5 w-5" />
-                <CardTitle className="text-base font-bold">
-                  Auth Context Simulator
-                </CardTitle>
-              </div>
-              <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                Switch authentication state instantly to test role-based UI
-                behavior.
-              </CardDescription>
+              <CardTitle className="text-base font-bold">Auth Context Simulator</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start text-xs font-bold rounded-xl h-10"
-                onClick={handleSimulateCustomer}
-              >
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 mr-2 shrink-0" />
-                Simulate Borrower (Customer Role)
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start text-xs font-bold rounded-xl h-10"
-                onClick={handleSimulateAdmin}
-              >
-                <Lock className="h-3.5 w-3.5 text-rose-600 mr-2 shrink-0" />
-                Simulate Underwriter (Admin Role)
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start text-xs font-bold text-slate-600 dark:text-slate-400 rounded-xl h-10"
-                onClick={handleSimulateGuest}
-              >
-                <AlertCircle className="h-3.5 w-3.5 mr-2 shrink-0" />
-                Simulate Unauthenticated Guest
-              </Button>
-            </CardContent>
+            <CardContent>...</CardContent>
           </Card>
-
-          {/* Center: Live Session State Display */}
-          <Card className="border-slate-200/80 shadow-fintech rounded-2xl">
-            <CardHeader>
-              <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
-                <Sparkles className="h-5 w-5" />
-                <CardTitle className="text-base font-bold">
-                  Current Session State
-                </CardTitle>
-              </div>
-              <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
-                Live reactive values stored in React AuthContext.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="font-semibold text-slate-500">Authenticated:</span>
-                <span className="font-bold">{isAuthenticated ? 'YES' : 'NO'}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="font-semibold text-slate-500">Current Role:</span>
-                <Badge variant={role === 'ADMIN' ? 'destructive' : 'default'} className="text-[10px]">
-                  {role}
-                </Badge>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="font-semibold text-slate-500">User Email:</span>
-                <span className="font-mono text-slate-700 dark:text-slate-300">
-                  {user?.email || 'None (Guest)'}
-                </span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="font-semibold text-slate-500">Application Stage:</span>
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  {application?.stage || 'No Active Application'}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Right: Backend API Health Checker Widget */}
           <HealthChecker />
         </div>
       </section>
+      */}
     </div>
   );
 }

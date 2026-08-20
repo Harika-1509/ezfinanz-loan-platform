@@ -49,8 +49,12 @@ class ApiClient {
   private refreshSubscribers: Array<(token: string) => void> = [];
 
   constructor() {
-    let url = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000/api/v1';
-    if (url.includes('localhost:5000')) {
+    let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    if (
+      typeof window !== 'undefined' &&
+      window.location.hostname === '127.0.0.1' &&
+      url.includes('localhost:5000')
+    ) {
       url = url.replace('localhost:5000', '127.0.0.1:5000');
     }
     this.baseUrl = url;
