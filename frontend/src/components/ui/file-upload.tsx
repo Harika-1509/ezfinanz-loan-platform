@@ -143,15 +143,25 @@ export function FileUpload({
             size="sm"
             disabled={disabled}
             onClick={handleClear}
-            className="text-slate-400 hover:text-rose-600"
-            title="Remove file"
+            className="text-slate-400 hover:text-rose-600 focus-visible:ring-2 focus-visible:ring-rose-500"
+            aria-label="Remove attached file"
+            title="Remove attached file"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
       ) : (
-        /* Dropzone Card */
+        /* Dropzone Card with Keyboard Accessibility */
         <div
+          tabIndex={disabled ? -1 : 0}
+          role="button"
+          aria-label={label}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -159,10 +169,10 @@ export function FileUpload({
             if (!disabled) fileInputRef.current?.click();
           }}
           className={cn(
-            'flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition-all',
+            'flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900',
             isDragging
               ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30'
-              : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-900',
+              : 'border-slate-300 bg-slate-50/50 hover:bg-slate-100/60 dark:border-slate-700 dark:bg-slate-900/40 dark:hover:bg-slate-900',
             displayError && 'border-rose-500 bg-rose-50/30',
             disabled && 'cursor-not-allowed opacity-50'
           )}
@@ -173,12 +183,12 @@ export function FileUpload({
           <p className="mt-2 text-xs font-bold text-slate-800 dark:text-slate-200">
             Click to upload or drag and drop
           </p>
-          <p className="text-[11px] text-slate-400">{helperText}</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">{helperText}</p>
         </div>
       )}
 
       {displayError && (
-        <p className="text-xs font-medium text-rose-500">{displayError}</p>
+        <p role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-400">{displayError}</p>
       )}
     </div>
   );

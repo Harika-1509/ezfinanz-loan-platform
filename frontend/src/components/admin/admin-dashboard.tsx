@@ -110,7 +110,7 @@ export function AdminDashboard() {
         if (res.data) {
           setApplications(res.data.applications || []);
           setTotalPages(res.data.pagination?.totalPages || 1);
-          setTotalCount(res.data.pagination?.totalCount || 0);
+          setTotalCount(res.data.pagination?.totalCount ?? (res.data.pagination as any)?.total ?? 0);
         }
       } catch (err: any) {
         setError(
@@ -171,21 +171,21 @@ export function AdminDashboard() {
     switch (stage) {
       case 'WAITING_ADMIN_REVIEW':
         return (
-          <Badge className="bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 font-bold text-[10px] uppercase tracking-wider animate-pulse">
+          <Badge className="bg-amber-100 text-amber-950 border border-amber-300 dark:bg-amber-950/80 dark:text-amber-200 font-bold text-[10px] uppercase tracking-wider animate-pulse">
             <Clock className="mr-1 h-3 w-3 inline" />
             Under Review
           </Badge>
         );
       case 'APPROVED':
         return (
-          <Badge className="bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold text-[10px] uppercase tracking-wider">
-            <CheckCircle2 className="mr-1 h-3 w-3 inline text-emerald-600" />
+          <Badge className="bg-emerald-100 text-emerald-950 border border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-200 font-bold text-[10px] uppercase tracking-wider">
+            <CheckCircle2 className="mr-1 h-3 w-3 inline text-emerald-600 dark:text-emerald-400" />
             Approved
           </Badge>
         );
       case 'DISBURSED':
         return (
-          <Badge className="bg-slate-900 text-emerald-400 border border-emerald-500/30 dark:bg-slate-800 font-extrabold text-[10px] uppercase tracking-wider shadow-sm">
+          <Badge className="bg-slate-900 text-emerald-400 border border-emerald-500/40 dark:bg-slate-800 font-black text-[10px] uppercase tracking-wider shadow-sm">
             <Sparkles className="mr-1 h-3 w-3 inline text-emerald-400" />
             Disbursed
           </Badge>
@@ -199,7 +199,7 @@ export function AdminDashboard() {
         );
       default:
         return (
-          <Badge variant="outline" className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+          <Badge variant="outline" className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
             {stage ? stage.replace(/_/g, ' ') : 'Draft'}
           </Badge>
         );
@@ -208,11 +208,11 @@ export function AdminDashboard() {
 
   const getSelfieBadge = (selfieStatus: string | null) => {
     if (!selfieStatus) {
-      return <span className="text-[11px] text-slate-400 italic">Pending</span>;
+      return <span className="text-[11px] text-slate-500 italic">Pending</span>;
     }
     if (selfieStatus === 'APPROVED') {
       return (
-        <span className="inline-flex items-center text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+        <span className="inline-flex items-center text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
           <CheckCircle className="mr-1 h-3.5 w-3.5" />
           Verified
         </span>
@@ -220,14 +220,14 @@ export function AdminDashboard() {
     }
     if (selfieStatus === 'REJECTED') {
       return (
-        <span className="inline-flex items-center text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+        <span className="inline-flex items-center text-[11px] font-bold text-rose-700 dark:text-rose-400">
           <XCircle className="mr-1 h-3.5 w-3.5" />
           Rejected
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+      <span className="inline-flex items-center text-[11px] font-bold text-amber-700 dark:text-amber-400">
         <Clock className="mr-1 h-3.5 w-3.5" />
         Needs Review
       </span>
@@ -245,7 +245,7 @@ export function AdminDashboard() {
               Underwriting Operations Portal
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
             Real-time loan application assessment, biometric selfie decisioning, and treasury disbursement management.
           </p>
         </div>
@@ -259,9 +259,9 @@ export function AdminDashboard() {
               fetchApplications(true);
             }}
             disabled={isRefreshing}
-            className="text-xs font-semibold"
+            className="text-xs font-bold"
           >
-            <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
             {isRefreshing ? 'Refreshing...' : 'Refresh Records'}
           </Button>
         </div>
@@ -272,56 +272,56 @@ export function AdminDashboard() {
         {/* Total Apps */}
         <Card className="border-slate-200/80 shadow-glass dark:border-slate-800">
           <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between text-slate-500">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span className="text-xs font-bold uppercase tracking-wider">Total Portfolio</span>
-              <Users className="h-4 w-4 text-slate-400" />
+              <Users className="h-4 w-4 text-slate-500" />
             </div>
             <p className="text-2xl font-black text-slate-900 dark:text-white">
               {stats ? stats.totalApplications : '—'}
             </p>
-            <p className="text-[10px] text-slate-400">Lifetime user applications</p>
+            <p className="text-[10px] text-slate-500 font-medium">Lifetime user applications</p>
           </CardContent>
         </Card>
 
         {/* Needs Review */}
         <Card className="border-amber-200/80 bg-amber-50/40 shadow-glass dark:border-amber-900/40 dark:bg-amber-950/20">
           <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between text-amber-700 dark:text-amber-400">
+            <div className="flex items-center justify-between text-amber-800 dark:text-amber-400">
               <span className="text-xs font-bold uppercase tracking-wider">Action Required</span>
               <Clock className="h-4 w-4 text-amber-600 animate-spin" />
             </div>
             <p className="text-2xl font-black text-amber-950 dark:text-amber-200">
               {stats ? stats.waitingReview : '—'}
             </p>
-            <p className="text-[10px] text-amber-700 dark:text-amber-400">Waiting Selfie & KYC Review</p>
+            <p className="text-[10px] text-amber-800 dark:text-amber-300 font-medium">Waiting Selfie & KYC Review</p>
           </CardContent>
         </Card>
 
         {/* Approved */}
         <Card className="border-emerald-200/80 bg-emerald-50/40 shadow-glass dark:border-emerald-900/40 dark:bg-emerald-950/20">
           <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400">
+            <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-400">
               <span className="text-xs font-bold uppercase tracking-wider">Approved Queue</span>
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             </div>
             <p className="text-2xl font-black text-emerald-950 dark:text-emerald-200">
               {stats ? stats.approved : '—'}
             </p>
-            <p className="text-[10px] text-emerald-700 dark:text-emerald-400">Ready for disbursement</p>
+            <p className="text-[10px] text-emerald-800 dark:text-emerald-300 font-medium">Ready for disbursement</p>
           </CardContent>
         </Card>
 
         {/* Disbursed */}
         <Card className="border-cyan-200/80 bg-cyan-50/40 shadow-glass dark:border-cyan-900/40 dark:bg-cyan-950/20">
           <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between text-cyan-700 dark:text-cyan-400">
+            <div className="flex items-center justify-between text-cyan-800 dark:text-cyan-400">
               <span className="text-xs font-bold uppercase tracking-wider">Active Loans</span>
               <Landmark className="h-4 w-4 text-cyan-600" />
             </div>
             <p className="text-2xl font-black text-cyan-950 dark:text-cyan-200">
               {stats ? stats.disbursed : '—'}
             </p>
-            <p className="text-[10px] text-cyan-700 dark:text-cyan-400">Successfully disbursed</p>
+            <p className="text-[10px] text-cyan-800 dark:text-cyan-300 font-medium">Successfully disbursed</p>
           </CardContent>
         </Card>
 
@@ -335,7 +335,7 @@ export function AdminDashboard() {
             <p className="text-xl font-black text-white truncate">
               {stats ? formatCurrency(stats.totalDisbursedAmount) : '—'}
             </p>
-            <p className="text-[10px] text-slate-400">Total credited funds</p>
+            <p className="text-[10px] text-slate-400 font-medium">Total credited funds</p>
           </CardContent>
         </Card>
       </div>
@@ -344,7 +344,11 @@ export function AdminDashboard() {
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Stage Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs">
+          <div
+            role="tablist"
+            aria-label="Filter applications by stage"
+            className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs"
+          >
             {[
               { id: 'ALL', label: 'All Applications' },
               { id: 'WAITING_ADMIN_REVIEW', label: '⏳ Waiting Review' },
@@ -355,11 +359,13 @@ export function AdminDashboard() {
             ].map((tab) => (
               <button
                 key={tab.id}
+                role="tab"
+                aria-selected={selectedStage === tab.id}
                 onClick={() => handleStageChange(tab.id)}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all text-xs ${
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 ${
                   selectedStage === tab.id
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white'
                 }`}
               >
                 {tab.label}
@@ -374,12 +380,13 @@ export function AdminDashboard() {
               <Input
                 type="text"
                 placeholder="Search applicant, email, phone..."
+                aria-label="Search applications by applicant name, email, or phone number"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 text-xs h-9"
               />
             </div>
-            <Button type="submit" size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9">
+            <Button type="submit" size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold h-9">
               Filter
             </Button>
           </form>
@@ -393,12 +400,12 @@ export function AdminDashboard() {
             <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
               Application Master Registry
             </CardTitle>
-            <CardDescription className="text-xs text-slate-500">
+            <CardDescription className="text-xs text-slate-600 dark:text-slate-400">
               Showing {applications.length} of {totalCount} matching loan files
             </CardDescription>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs text-slate-500 font-mono">
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-mono font-medium">
               Page {page} of {totalPages}
             </span>
           </div>
@@ -424,13 +431,13 @@ export function AdminDashboard() {
 
           {/* Error State */}
           {!isLoading && error && (
-            <div className="p-12 text-center space-y-3">
+            <div role="alert" className="p-12 text-center space-y-3">
               <AlertCircle className="mx-auto h-10 w-10 text-rose-500" />
               <p className="text-sm font-bold text-slate-900 dark:text-white">
                 Unable to Retrieve Application Data
               </p>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">{error}</p>
-              <Button size="sm" onClick={() => fetchApplications()} className="text-xs bg-rose-600 hover:bg-rose-700 text-white">
+              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">{error}</p>
+              <Button size="sm" onClick={() => fetchApplications()} className="text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white">
                 Retry Query
               </Button>
             </div>
@@ -439,13 +446,13 @@ export function AdminDashboard() {
           {/* Empty State */}
           {!isLoading && !error && applications.length === 0 && (
             <div className="p-16 text-center space-y-3">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500">
                 <FileText className="h-6 w-6" />
               </div>
               <p className="text-sm font-bold text-slate-900 dark:text-white">
                 No Applications Match Your Criteria
               </p>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
                 No loan records were found with current filter options. Try clearing search keywords or selecting all stages.
               </p>
               <Button
@@ -455,7 +462,7 @@ export function AdminDashboard() {
                   setSearchQuery('');
                   setSelectedStage('ALL');
                 }}
-                className="text-xs"
+                className="text-xs font-semibold"
               >
                 Reset Filters
               </Button>
@@ -465,22 +472,22 @@ export function AdminDashboard() {
           {/* Success Data Table */}
           {!isLoading && !error && applications.length > 0 && (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table aria-label="Loan applications master table" className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-850 dark:text-slate-400">
-                    <th className="py-3.5 px-4">Applicant</th>
-                    <th className="py-3.5 px-4">Loan Details</th>
-                    <th className="py-3.5 px-4">Workflow Stage</th>
-                    <th className="py-3.5 px-4">Biometric Selfie</th>
-                    <th className="py-3.5 px-4">Submission Date</th>
-                    <th className="py-3.5 px-4 text-right">Action</th>
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:border-slate-800 dark:bg-slate-850 dark:text-slate-400">
+                    <th scope="col" className="py-3.5 px-4">Applicant</th>
+                    <th scope="col" className="py-3.5 px-4">Loan Details</th>
+                    <th scope="col" className="py-3.5 px-4">Workflow Stage</th>
+                    <th scope="col" className="py-3.5 px-4">Biometric Selfie</th>
+                    <th scope="col" className="py-3.5 px-4">Submission Date</th>
+                    <th scope="col" className="py-3.5 px-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                   {applications.map((app) => (
                     <tr
                       key={app.id}
-                      className="hover:bg-slate-50/60 dark:hover:bg-slate-850/50 transition-colors"
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition-colors"
                     >
                       {/* 1. Applicant Column */}
                       <td className="py-3.5 px-4">
@@ -488,10 +495,10 @@ export function AdminDashboard() {
                           <p className="font-bold text-slate-900 dark:text-white text-xs">
                             {app.applicantName || 'Applicant Profile'}
                           </p>
-                          <p className="text-[11px] text-slate-500 font-mono">
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 font-mono">
                             {app.applicantEmail || app.applicantPhone || 'Verified Borrower'}
                           </p>
-                          <p className="text-[10px] text-slate-400 font-mono truncate max-w-[140px]">
+                          <p className="text-[10px] text-slate-500 font-mono truncate max-w-[140px]">
                             ID: {app.id.substring(0, 8)}...
                           </p>
                         </div>
@@ -503,7 +510,7 @@ export function AdminDashboard() {
                           <p className="font-mono font-black text-slate-900 dark:text-white text-xs">
                             {formatCurrency(app.requestedAmount)}
                           </p>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
                             {app.tenureMonths ? `${app.tenureMonths} Months Tenure` : 'Tenure Pending'}
                           </p>
                         </div>
@@ -516,7 +523,7 @@ export function AdminDashboard() {
                       <td className="py-3.5 px-4">{getSelfieBadge(app.selfieStatus)}</td>
 
                       {/* 5. Date */}
-                      <td className="py-3.5 px-4 text-[11px] text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-[11px] text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">
                         {formatDate(app.submittedAt || app.updatedAt)}
                       </td>
 
@@ -525,7 +532,7 @@ export function AdminDashboard() {
                         <Link href={`/admin/applications/${app.id}`}>
                           <Button
                             size="sm"
-                            className="bg-slate-900 hover:bg-slate-800 text-white text-xs dark:bg-emerald-600 dark:hover:bg-emerald-700 font-semibold"
+                            className="bg-slate-900 hover:bg-slate-800 text-white text-xs dark:bg-emerald-600 dark:hover:bg-emerald-700 font-bold focus-visible:ring-2 focus-visible:ring-emerald-600"
                           >
                             <Eye className="mr-1.5 h-3.5 w-3.5" />
                             Review File
@@ -543,17 +550,18 @@ export function AdminDashboard() {
         {/* Table Footer with Pagination */}
         {!isLoading && !error && totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850 text-xs">
-            <p className="text-slate-500">
-              Showing page <span className="font-bold">{page}</span> of{' '}
-              <span className="font-bold">{totalPages}</span>
+            <p className="text-slate-600 dark:text-slate-400 font-medium">
+              Showing page <span className="font-bold text-slate-900 dark:text-white">{page}</span> of{' '}
+              <span className="font-bold text-slate-900 dark:text-white">{totalPages}</span>
             </p>
             <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
                 size="sm"
+                aria-label="Previous page"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="text-xs h-8"
+                className="text-xs h-8 font-semibold"
               >
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" />
                 Previous
@@ -561,9 +569,10 @@ export function AdminDashboard() {
               <Button
                 variant="outline"
                 size="sm"
+                aria-label="Next page"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="text-xs h-8"
+                className="text-xs h-8 font-semibold"
               >
                 Next
                 <ChevronRight className="h-3.5 w-3.5 ml-1" />

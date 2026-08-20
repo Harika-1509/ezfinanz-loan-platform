@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import React, { useState } from 'react';
@@ -14,65 +16,16 @@ import {
   ArrowRight,
   ShieldCheck,
 } from 'lucide-react';
+import { kycSchema, extractFieldErrors } from '../../lib/validation';
+import { compressImage } from '../../lib/image-compress';
 import { useAuth } from '../../contexts/auth-context';
-import { apiClient, ApiError } from '../../lib/api-client';
+import { apiClient } from '../../lib/api-client';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { FileUpload } from '../ui/file-upload';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
-
-// Zod Schema with Age >= 18 validation and Gender
-const kycSchema = z.object({
-  fullName: z
-    .string()
-    .trim()
-    .min(2, 'Full Name must be at least 2 characters')
-    .max(100, 'Full Name cannot exceed 100 characters'),
-  dob: z
-    .string()
-    .min(1, 'Date of Birth is required')
-    .refine((dobStr) => {
-      const birthDate = new Date(dobStr);
-      if (isNaN(birthDate.getTime())) return false;
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      return age >= 18;
-    }, 'Applicant must be at least 18 years of age per RBI regulations'),
-  gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
-  address: z
-    .string()
-    .trim()
-    .min(5, 'Residential address must be at least 5 characters')
-    .max(500, 'Address cannot exceed 500 characters'),
-  idType: z.enum(['PAN', 'AADHAAR']),
-  idNumber: z.string().trim().min(1, 'ID Document number is required'),
-}).superRefine((data, ctx) => {
-  if (data.idType === 'PAN') {
-    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-    if (!panRegex.test(data.idNumber.toUpperCase())) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Invalid PAN card format. Expected 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)',
-        path: ['idNumber'],
-      });
-    }
-  } else if (data.idType === 'AADHAAR') {
-    const aadhaarRegex = /^[2-9]{1}[0-9]{11}$/;
-    if (!aadhaarRegex.test(data.idNumber)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Invalid Aadhaar format. Expected 12 digits (starts with 2-9)',
-        path: ['idNumber'],
-      });
-    }
-  }
-});
 
 export interface KycFormProps {
   onSuccess?: () => void;
@@ -133,7 +86,23 @@ export function KycForm({ onSuccess }: KycFormProps) {
     setIsLoading(true);
     try {
       if (documentFile) {
-        // Multipart submission
+        // Multipart submission with client-side image compression
+        let uploadFile: File | Blob = documentFile;
+        if (documentFile.type.startsWith('image/')) {
+          try {
+            const compressed = await compressImage(documentFile, {
+              maxWidth: 1200,
+              maxHeight: 1200,
+              quality: 0.85,
+            });
+            uploadFile = new File([compressed.blob], documentFile.name.replace(/\.[^/.]+$/, '.jpg'), {
+              type: 'image/jpeg',
+            });
+          } catch (compressErr) {
+            console.warn('KYC image compression fallback to raw file:', compressErr);
+          }
+        }
+
         const formData = new FormData();
         formData.append('fullName', fullName);
         formData.append('dob', dob);
@@ -141,7 +110,7 @@ export function KycForm({ onSuccess }: KycFormProps) {
         formData.append('address', address);
         formData.append('idType', idType);
         formData.append('idNumber', idNumber.toUpperCase());
-        formData.append('file', documentFile);
+        formData.append('file', uploadFile);
 
         await apiClient.upload('/kyc/submit', formData);
       } else {
@@ -163,10 +132,13 @@ export function KycForm({ onSuccess }: KycFormProps) {
         if (onSuccess) onSuccess();
       }, 1000);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Failed to submit KYC details. Please check your information.');
+      const { fieldErrors: extractedFieldErrors, generalMessage } = extractFieldErrors(
+        err,
+        'Failed to submit KYC details. Please check your information.'
+      );
+      setErrorMessage(generalMessage);
+      if (Object.keys(extractedFieldErrors).length > 0) {
+        setFieldErrors(extractedFieldErrors);
       }
     } finally {
       setIsLoading(false);
@@ -177,14 +149,14 @@ export function KycForm({ onSuccess }: KycFormProps) {
     <Card className="border-slate-200/80 shadow-glass backdrop-blur-md">
       <CardHeader>
         <div className="flex items-center space-x-2.5 text-emerald-600">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
             <FileText className="h-5 w-5" />
           </div>
           <div>
             <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
               Step 2: KYC & Identity Verification
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
               Provide your government-issued ID details to verify legal eligibility.
             </CardDescription>
           </div>
@@ -194,16 +166,16 @@ export function KycForm({ onSuccess }: KycFormProps) {
       <CardContent className="space-y-4">
         {/* Alert Notification Banners */}
         {errorMessage && (
-          <div className="flex items-start space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+          <div role="alert" className="flex items-start space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200 font-medium">
             <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-600 mt-0.5" />
-            <div className="flex-1">{errorMessage}</div>
+            <div className="flex-1 font-bold">{errorMessage}</div>
           </div>
         )}
 
         {successMessage && (
-          <div className="flex items-start space-x-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+          <div role="status" className="flex items-start space-x-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200 font-medium">
             <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-600 mt-0.5" />
-            <div className="flex-1">{successMessage}</div>
+            <div className="flex-1 font-bold">{successMessage}</div>
           </div>
         )}
 
@@ -245,16 +217,17 @@ export function KycForm({ onSuccess }: KycFormProps) {
           {/* Gender Selector */}
           <div className="space-y-1.5">
             <Label required>Gender</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2" role="group" aria-label="Select Gender">
               {(['MALE', 'FEMALE', 'OTHER'] as const).map((g) => (
                 <button
                   key={g}
                   type="button"
                   onClick={() => setGender(g)}
-                  className={`rounded-xl border py-2.5 text-xs font-bold transition-all ${
+                  aria-pressed={gender === g}
+                  className={`inline-flex items-center justify-center rounded-xl border px-3 py-2.5 text-xs font-bold transition-all min-h-[42px] leading-normal text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
                     gender === g
-                      ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 ring-2 ring-emerald-500/20 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-600 dark:bg-emerald-950/50 dark:border-emerald-600 dark:text-emerald-200 shadow-xs'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
                   }`}
                 >
                   {g === 'MALE' ? 'Male' : g === 'FEMALE' ? 'Female' : 'Other'}
@@ -266,30 +239,32 @@ export function KycForm({ onSuccess }: KycFormProps) {
           {/* ID Type Selector */}
           <div className="space-y-2">
             <Label required>Government ID Type</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3" role="group" aria-label="Select Government ID Type">
               <button
                 type="button"
                 onClick={() => handleIdTypeChange('PAN')}
-                className={`flex items-center justify-center space-x-2 rounded-xl border p-3 text-xs font-bold transition-all ${
+                aria-pressed={idType === 'PAN'}
+                className={`inline-flex items-center justify-center space-x-2 rounded-xl border px-4 py-3 text-xs font-bold transition-all min-h-[44px] leading-normal text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
                   idType === 'PAN'
-                    ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 ring-2 ring-emerald-500/20 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                    ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-600 dark:bg-emerald-950/50 dark:border-emerald-600 dark:text-emerald-200 shadow-xs'
+                    : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
                 }`}
               >
-                <CreditCard className="h-4 w-4 text-emerald-600" />
+                <CreditCard className="h-4 w-4 text-emerald-600 shrink-0" />
                 <span>PAN Card</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleIdTypeChange('AADHAAR')}
-                className={`flex items-center justify-center space-x-2 rounded-xl border p-3 text-xs font-bold transition-all ${
+                aria-pressed={idType === 'AADHAAR'}
+                className={`inline-flex items-center justify-center space-x-2 rounded-xl border px-4 py-3 text-xs font-bold transition-all min-h-[44px] leading-normal text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
                   idType === 'AADHAAR'
-                    ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900 ring-2 ring-emerald-500/20 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-300'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                    ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-600 dark:bg-emerald-950/50 dark:border-emerald-600 dark:text-emerald-200 shadow-xs'
+                    : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
                 }`}
               >
-                <ShieldCheck className="h-4 w-4 text-teal-600" />
+                <CreditCard className="h-4 w-4 text-emerald-600 shrink-0" />
                 <span>Aadhaar Card</span>
               </button>
             </div>
@@ -350,7 +325,7 @@ export function KycForm({ onSuccess }: KycFormProps) {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 shadow-sm mt-4"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 shadow-sm mt-4 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
           >
             {isLoading ? (
               <>
@@ -367,8 +342,8 @@ export function KycForm({ onSuccess }: KycFormProps) {
         </form>
       </CardContent>
 
-      <CardFooter className="bg-slate-50/50 py-3 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 text-center">
-        <p className="w-full text-[11px] text-slate-400">
+      <CardFooter className="bg-slate-50/70 py-3.5 dark:bg-slate-900/70 border-t border-slate-200/80 dark:border-slate-800 text-center">
+        <p className="w-full text-[11px] text-slate-600 dark:text-slate-400 font-medium">
           🔒 Your identity data is encrypted and validated in accordance with RBI KYC master directions.
         </p>
       </CardFooter>

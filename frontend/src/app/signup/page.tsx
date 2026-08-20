@@ -18,45 +18,14 @@ import {
   Check,
   X,
 } from 'lucide-react';
+import { signupSchema, extractFieldErrors } from '../../lib/validation';
 import { useAuth } from '../../contexts/auth-context';
-import { apiClient, ApiError } from '../../lib/api-client';
+import { apiClient } from '../../lib/api-client';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card';
 import { GuestRoute } from '../../components/auth/route-guards';
-
-const signupSchema = z
-  .object({
-    email: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .min(1, 'Email address is required')
-      .email('Please enter a valid email address'),
-    phone: z
-      .string()
-      .trim()
-      .regex(
-        /^[6-9]\d{9}$/,
-        'Please enter a valid 10-digit Indian mobile number (starts with 6-9)'
-      ),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters long')
-      .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
-      .regex(/[a-z]/, 'Must contain at least one lowercase letter')
-      .regex(/[0-9]/, 'Must contain at least one number')
-      .regex(
-        /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/,
-        'Must contain at least one special character'
-      ),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  });
 
 export default function SignupPage() {
   const { signup } = useAuth();
@@ -117,10 +86,13 @@ export default function SignupPage() {
         router.push('/verify');
       }, 500);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Failed to create account. Please try again.');
+      const { fieldErrors: extractedFieldErrors, generalMessage } = extractFieldErrors(
+        err,
+        'Failed to create account. Please try again.'
+      );
+      setErrorMessage(generalMessage);
+      if (Object.keys(extractedFieldErrors).length > 0) {
+        setFieldErrors(extractedFieldErrors);
       }
     } finally {
       setIsLoading(false);

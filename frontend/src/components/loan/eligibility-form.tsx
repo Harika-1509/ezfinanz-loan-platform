@@ -18,28 +18,14 @@ import {
   Info,
   RefreshCw,
 } from 'lucide-react';
+import { eligibilitySchema, extractFieldErrors } from '../../lib/validation';
 import { useAuth } from '../../contexts/auth-context';
-import { apiClient, ApiError } from '../../lib/api-client';
+import { apiClient } from '../../lib/api-client';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
 import { Badge } from '../ui/badge';
-
-const eligibilitySchema = z.object({
-  monthlyIncome: z
-    .number({ invalid_type_error: 'Monthly Income is required' })
-    .min(10000, 'Monthly income must be at least ₹10,000'),
-  requestedAmount: z
-    .number({ invalid_type_error: 'Requested amount is required' })
-    .min(50000, 'Minimum loan amount is ₹50,000')
-    .max(1000000, 'Maximum loan amount is ₹10,00,000'),
-  existingDebts: z
-    .number({ invalid_type_error: 'Existing debts must be a number' })
-    .min(0, 'Existing debts cannot be negative'),
-  employerName: z.string().trim().min(2, 'Employer name is required'),
-  designation: z.string().trim().min(2, 'Designation / Job Title is required'),
-});
 
 export interface EligibilityResult {
   decision: 'ELIGIBLE' | 'PARTIALLY_ELIGIBLE' | 'NOT_ELIGIBLE';
@@ -117,7 +103,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
     const debtsNum = Number(existingDebts || 0);
 
     const validation = eligibilitySchema.safeParse({
-      monthlyIncome: incomeNum,
+      income: incomeNum,
       requestedAmount: amountNum,
       existingDebts: debtsNum,
       employerName,
@@ -127,7 +113,11 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
     if (!validation.success) {
       const errors: Record<string, string> = {};
       validation.error.errors.forEach((err) => {
-        if (err.path[0]) errors[err.path[0].toString()] = err.message;
+        if (err.path[0]) {
+          const pathKey = err.path[0].toString();
+          errors[pathKey] = err.message;
+          if (pathKey === 'income') errors['monthlyIncome'] = err.message;
+        }
       });
       setFieldErrors(errors);
       return;
@@ -167,10 +157,16 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
       setResult(evalData);
       updateApplicationStage('ELIGIBILITY_CHECKED');
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Failed to compute loan eligibility. Please verify your inputs.');
+      const { fieldErrors: extractedFieldErrors, generalMessage } = extractFieldErrors(
+        err,
+        'Failed to compute loan eligibility. Please verify your inputs.'
+      );
+      setErrorMessage(generalMessage);
+      if (Object.keys(extractedFieldErrors).length > 0) {
+        if (extractedFieldErrors.income && !extractedFieldErrors.monthlyIncome) {
+          extractedFieldErrors.monthlyIncome = extractedFieldErrors.income;
+        }
+        setFieldErrors(extractedFieldErrors);
       }
     } finally {
       setIsLoading(false);
@@ -190,7 +186,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
       <Card className="border-slate-200/80 shadow-glass">
         <CardContent className="flex flex-col items-center justify-center py-12 space-y-3">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-          <p className="text-xs text-slate-500">Loading credit underwriting engine...</p>
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Loading credit underwriting engine...</p>
         </CardContent>
       </Card>
     );
@@ -199,16 +195,16 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
   return (
     <Card className="border-slate-200/80 shadow-glass backdrop-blur-md">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center space-x-2.5 text-teal-600">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300">
               <Calculator className="h-5 w-5" />
             </div>
             <div>
               <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
                 Step 3: Credit & Underwriting Eligibility
               </CardTitle>
-              <CardDescription className="text-xs">
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
                 Real-time debt-to-income and credit band calculation.
               </CardDescription>
             </div>
@@ -217,16 +213,12 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
             <Badge
               variant={
                 result.decision === 'ELIGIBLE'
-                  ? 'default'
+                  ? 'success'
                   : result.decision === 'PARTIALLY_ELIGIBLE'
                   ? 'secondary'
                   : 'destructive'
               }
-              className={
-                result.decision === 'ELIGIBLE'
-                  ? 'bg-emerald-600 text-white font-bold'
-                  : ''
-              }
+              className="text-xs px-3 py-1 font-bold"
             >
               {result.decision.replace('_', ' ')}
             </Badge>
@@ -237,19 +229,19 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
       <CardContent className="space-y-5">
         {/* Error Alert */}
         {errorMessage && (
-          <div className="flex items-start space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300">
+          <div role="alert" className="flex items-start space-x-2 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200 font-medium">
             <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-600 mt-0.5" />
-            <div className="flex-1">{errorMessage}</div>
+            <div className="flex-1 font-bold">{errorMessage}</div>
           </div>
         )}
 
         {/* Bureau Note */}
-        <div className="flex items-start space-x-2 rounded-xl border border-teal-200 bg-teal-50/60 p-3 text-xs text-teal-900 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-200">
+        <div className="flex items-start space-x-2 rounded-xl border border-teal-200 bg-teal-50/70 p-3.5 text-xs text-teal-950 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-200">
           <Info className="h-4 w-4 flex-shrink-0 text-teal-600 mt-0.5" />
           <div className="flex-1">
-            <p className="font-semibold">Automated Bureau Credit Score Simulation</p>
-            <p className="text-[11px] text-teal-700 dark:text-teal-300 mt-0.5">
-              Score is pulled from the simulated credit bureau benchmark (Score $\ge 750$ with DTI $\le 50\%$ grants instant prime terms).
+            <p className="font-bold">Automated Bureau Credit Score Simulation</p>
+            <p className="text-[11px] text-teal-800 dark:text-teal-300 mt-0.5">
+              Score is pulled from the simulated credit bureau benchmark (Score ≥ 750 with DTI ≤ 50% grants instant prime terms).
             </p>
           </div>
         </div>
@@ -293,17 +285,18 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
             </div>
 
             {/* Quick Amount Selector Pills */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-slate-500">Quick Select:</span>
+            <div className="flex flex-wrap items-center gap-2 pt-1" role="group" aria-label="Quick Select Loan Amount">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Quick Select:</span>
               {[100000, 300000, 500000, 1000000].map((amt) => (
                 <button
                   key={amt}
                   type="button"
                   onClick={() => handleQuickAmount(amt)}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  aria-pressed={requestedAmount === amt.toString()}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all min-h-[34px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
                     requestedAmount === amt.toString()
-                      ? 'bg-teal-600 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                      ? 'bg-teal-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200'
                   }`}
                 >
                   ₹{(amt / 100000).toFixed(amt % 100000 === 0 ? 0 : 1)} Lakh
@@ -326,7 +319,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
                 icon={<IndianRupee className="h-4 w-4" />}
                 disabled={isLoading}
               />
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                 Enter ₹0 if you currently have no other active monthly debt obligations.
               </p>
             </div>
@@ -369,7 +362,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold h-11 shadow-sm mt-4"
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold h-11 shadow-sm mt-4 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2"
             >
               {isLoading ? (
                 <>
@@ -386,7 +379,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
           </form>
         ) : (
           /* Result Outcome Display */
-          <div className="space-y-5">
+          <div className="space-y-5" aria-live="polite">
             {/* Outcome 1: ELIGIBLE */}
             {result.decision === 'ELIGIBLE' && (
               <div className="rounded-2xl border border-emerald-300 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent p-6 text-slate-900 dark:border-emerald-800 dark:text-white space-y-4 shadow-glass">
@@ -405,32 +398,32 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-emerald-200/60 dark:border-emerald-900/60">
-                  <div className="rounded-xl bg-white/80 p-3 dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-950">
-                    <p className="text-[11px] font-bold text-slate-500">Max Sanction Limit</p>
-                    <p className="text-base font-black text-emerald-600">
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-emerald-100 dark:border-emerald-950 shadow-xs">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Max Sanction Limit</p>
+                    <p className="text-base font-black text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(result.maxEligibleAmount)}
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 p-3 dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-950">
-                    <p className="text-[11px] font-bold text-slate-500">CIBIL Score</p>
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-emerald-100 dark:border-emerald-950 shadow-xs">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400">CIBIL Score</p>
                     <p className="text-base font-black text-slate-900 dark:text-white">
                       {result.creditScore}{' '}
-                      <span className="text-xs font-semibold text-emerald-600">
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                         ({result.creditBand})
                       </span>
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 p-3 dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-950">
-                    <p className="text-[11px] font-bold text-slate-500">DTI Ratio</p>
-                    <p className="text-base font-black text-teal-600">
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-emerald-100 dark:border-emerald-950 shadow-xs">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400">DTI Ratio</p>
+                    <p className="text-base font-black text-teal-600 dark:text-teal-400">
                       {result.dtiRatio.toFixed(1)}%
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 p-3 dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-950">
-                    <p className="text-[11px] font-bold text-slate-500">Indicative Rate</p>
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-emerald-100 dark:border-emerald-950 shadow-xs">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Indicative Rate</p>
                     <p className="text-base font-black text-slate-900 dark:text-white">
                       {result.interestRate}% p.a.
                     </p>
@@ -451,7 +444,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
                   <Button
                     variant="outline"
                     onClick={() => setResult(null)}
-                    className="text-xs font-semibold"
+                    className="text-xs font-bold"
                   >
                     <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                     Re-calculate
@@ -478,32 +471,32 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-amber-200/60 dark:border-amber-900/60">
-                  <div className="rounded-xl bg-white/80 p-3 dark:bg-slate-900/80 border border-amber-100 dark:border-amber-950">
-                    <p className="text-[11px] font-bold text-slate-500">Approved Limit</p>
-                    <p className="text-base font-black text-amber-600">
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-amber-100 dark:border-amber-950 shadow-xs">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Approved Limit</p>
+                    <p className="text-base font-black text-amber-600 dark:text-amber-400">
                       {formatCurrency(result.maxEligibleAmount)}
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 p-3 dark:bg-slate-900/80 border border-amber-100 dark:border-amber-950">
-                    <p className="text-[11px] font-bold text-slate-500">CIBIL Score</p>
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-amber-100 dark:border-amber-950 shadow-xs">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400">CIBIL Score</p>
                     <p className="text-base font-black text-slate-900 dark:text-white">
                       {result.creditScore}{' '}
-                      <span className="text-xs font-semibold text-amber-600">
+                      <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
                         ({result.creditBand})
                       </span>
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 p-3 dark:bg-slate-900/80 border border-amber-100 dark:border-amber-950">
-                    <p className="text-[11px] font-bold text-slate-500">DTI Ratio</p>
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-amber-100 dark:border-amber-950 shadow-xs">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400">DTI Ratio</p>
                     <p className="text-base font-black text-slate-800 dark:text-slate-200">
                       {result.dtiRatio.toFixed(1)}%
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white/80 p-3 dark:bg-slate-900/80 border border-amber-100 dark:border-amber-950">
-                    <p className="text-[11px] font-bold text-slate-500">Interest Rate</p>
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-amber-100 dark:border-amber-950 shadow-xs">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Interest Rate</p>
                     <p className="text-base font-black text-slate-900 dark:text-white">
                       {result.interestRate}% p.a.
                     </p>
@@ -524,7 +517,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
                   <Button
                     variant="outline"
                     onClick={() => setResult(null)}
-                    className="text-xs font-semibold"
+                    className="text-xs font-bold"
                   >
                     <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                     Modify Details
@@ -544,7 +537,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
                     <h3 className="text-xl font-black text-slate-900 dark:text-white">
                       Application Criteria Not Met
                     </h3>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       Based on current debt-to-income ({result.dtiRatio.toFixed(1)}%) or bureau parameters, automated underwriting cannot approve the requested amount at this time.
                     </p>
                   </div>
@@ -596,8 +589,8 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
         )}
       </CardContent>
 
-      <CardFooter className="bg-slate-50/50 py-3 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 text-center">
-        <p className="w-full text-[11px] text-slate-400">
+      <CardFooter className="bg-slate-50/70 py-3.5 dark:bg-slate-900/70 border-t border-slate-200/80 dark:border-slate-800 text-center">
+        <p className="w-full text-[11px] text-slate-600 dark:text-slate-400 font-medium">
           ⚡ Automated underwriting powered by pure business logic calculation without manual bias.
         </p>
       </CardFooter>
