@@ -96,7 +96,7 @@ describe('Loan Terms Module Integration Tests', () => {
         designation: 'Architect',
         dtiRatio: 15.0,
         result: EligibilityResult.ELIGIBLE,
-        maxApprovedAmount: 500000, // Maximum cap ₹5,00,000
+        maxApprovedAmount: 350000, // Approved cap ₹3,50,000
       },
     });
 
@@ -198,7 +198,7 @@ describe('Loan Terms Module Integration Tests', () => {
         .post('/api/v1/loan-terms/calculate')
         .set('Authorization', `Bearer ${eligibleToken}`)
         .send({
-          amount: 800000, // Exceeds approved ₹5,00,000
+          amount: 450000, // Exceeds approved ₹3,50,000 within ₹5,00,000 ceiling
           tenureMonths: 24,
         });
 
@@ -280,7 +280,7 @@ describe('Loan Terms Module Integration Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.allowedTenures).toEqual([6, 12, 18, 24, 36]);
-      expect(res.body.data.maxApprovedAmount).toBe(500000);
+      expect(res.body.data.maxApprovedAmount).toBe(350000);
       expect(res.body.data.currentTerms).toBeDefined();
     });
 

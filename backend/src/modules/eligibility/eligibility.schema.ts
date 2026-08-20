@@ -9,7 +9,7 @@ export const eligibilityCheckSchema = {
     requestedAmount: z
       .number({ required_error: 'Requested loan amount is required' })
       .min(10000, 'Requested amount must be at least ₹10,000')
-      .max(5000000, 'Requested amount cannot exceed ₹50,00,000'),
+      .max(500000, 'Requested amount cannot exceed ₹5,00,000'),
     creditScore: z
       .number()
       .int('Credit score must be an integer')

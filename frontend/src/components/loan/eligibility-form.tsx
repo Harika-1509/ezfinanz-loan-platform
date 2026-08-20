@@ -273,12 +273,12 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
 
               <div className="space-y-1.5">
                 <Label htmlFor="requestedAmount" required className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Desired Loan Amount (₹10k - ₹50L)
+                  Desired Loan Amount (₹10k - ₹5L)
                 </Label>
                 <Input
                   id="requestedAmount"
                   type="number"
-                  placeholder="300000"
+                  placeholder="200000"
                   value={requestedAmount}
                   onChange={(e) => setRequestedAmount(e.target.value)}
                   error={Boolean(fieldErrors.requestedAmount)}
@@ -294,7 +294,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
             {/* Quick Amount Selector Pills */}
             <div className="flex flex-wrap items-center gap-2 pt-1" role="group" aria-label="Quick Select Loan Amount">
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400 mr-1">Presets:</span>
-              {[100000, 300000, 500000, 1000000].map((amt) => (
+              {[50000, 100000, 250000, 500000].map((amt) => (
                 <button
                   key={amt}
                   type="button"
@@ -306,7 +306,7 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80 dark:bg-slate-800 dark:text-slate-200'
                   }`}
                 >
-                  ₹{(amt / 100000).toFixed(amt % 100000 === 0 ? 0 : 1)} Lakh
+                  {amt < 100000 ? `₹${amt / 1000}k` : `₹${amt / 100000} Lakh`}
                 </button>
               ))}
             </div>

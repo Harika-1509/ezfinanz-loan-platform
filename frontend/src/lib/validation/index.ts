@@ -147,7 +147,7 @@ export const eligibilitySchema = z.object({
   requestedAmount: z
     .number({ invalid_type_error: 'Requested loan amount is required and must be a number' })
     .min(10000, 'Minimum loan amount is ₹10,000')
-    .max(5000000, 'Maximum loan amount is ₹50,00,000'),
+    .max(500000, 'Maximum loan amount is ₹5,00,000 (₹5 Lakhs)'),
   existingDebts: z
     .number({ invalid_type_error: 'Existing monthly debts must be a number' })
     .min(0, 'Existing debts cannot be negative')
@@ -169,7 +169,7 @@ export const loanTermsSchema = z.object({
   amount: z
     .number({ required_error: 'Loan amount is required' })
     .min(10000, 'Minimum loan amount is ₹10,000')
-    .max(5000000, 'Maximum loan amount is ₹50,00,000'),
+    .max(500000, 'Maximum loan amount is ₹5,00,000 (₹5 Lakhs)'),
   tenureMonths: z
     .number({ required_error: 'Tenure in months is required' })
     .refine(

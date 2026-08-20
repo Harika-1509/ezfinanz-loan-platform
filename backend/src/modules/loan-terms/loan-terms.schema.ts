@@ -7,7 +7,7 @@ export const loanTermsCalculationSchema = {
     amount: z
       .number({ required_error: 'Loan amount is required' })
       .min(10000, 'Loan amount must be at least ₹10,000')
-      .max(5000000, 'Loan amount cannot exceed ₹50,000,000'),
+      .max(500000, 'Loan amount cannot exceed ₹5,00,000'),
     tenureMonths: z
       .number({ required_error: 'Tenure in months is required' })
       .refine(
@@ -22,7 +22,7 @@ export const loanTermsConfirmSchema = {
     amount: z
       .number({ required_error: 'Loan amount is required' })
       .min(10000, 'Loan amount must be at least ₹10,000')
-      .max(5000000, 'Loan amount cannot exceed ₹50,000,000'),
+      .max(500000, 'Loan amount cannot exceed ₹5,00,000'),
     tenureMonths: z
       .number({ required_error: 'Tenure in months is required' })
       .refine(
