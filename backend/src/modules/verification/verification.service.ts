@@ -1,8 +1,7 @@
-import { ApplicationStage } from '@prisma/client';
+import { ApplicationStage, OtpChannel, OtpPurpose } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import { AppError } from '../../shared/utils/app-error';
 import { otpService } from '../../shared/services/otp.service';
-import { emailService } from '../../shared/services/email.service';
 
 export interface VerificationStatusResponse {
   email: string | null;
@@ -20,7 +19,8 @@ export class VerificationService {
    */
   public async sendEmailOtp(
     userId: string,
-    emailOverride?: string
+    emailOverride?: string,
+    ipAddress?: string
   ): Promise<{ target: string; expiresAt: Date; message: string }> {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -46,29 +46,18 @@ export class VerificationService {
       }
     }
 
-    // Generate 6-digit OTP using OtpService abstraction
-    const { otp, expiresAt } = await otpService.generateOtp(targetEmail, 'EMAIL_VERIFICATION');
-
-    // Deliver OTP via EmailService abstraction
-    await emailService.sendEmail({
-      to: targetEmail,
-      subject: 'EZFinanz - Email Verification Code',
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e293b;">
-          <h2 style="color: #0284c7;">EZFinanz Loan Platform</h2>
-          <p>Your one-time verification code for your email address is:</p>
-          <div style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #0f172a; padding: 12px 0;">
-            ${otp}
-          </div>
-          <p style="color: #64748b; font-size: 14px;">This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
-        </div>
-      `,
+    // Generate & dispatch real OTP via ProductionOtpService
+    const result = await otpService.generateAndSendOtp({
+      identifier: targetEmail,
+      channel: OtpChannel.EMAIL,
+      purpose: OtpPurpose.EMAIL_VERIFICATION,
+      ipAddress,
     });
 
     return {
-      target: targetEmail,
-      expiresAt,
-      message: 'Verification OTP has been successfully sent to your email address.',
+      target: result.identifier,
+      expiresAt: result.expiresAt,
+      message: `Verification OTP has been sent to ${result.identifier}. Valid for 10 minutes.`,
     };
   }
 
@@ -95,11 +84,12 @@ export class VerificationService {
       throw AppError.badRequest('No email address associated with this account to verify.');
     }
 
-    // Verify OTP
-    const isValid = await otpService.verifyOtp(targetEmail, otp, 'EMAIL_VERIFICATION');
-    if (!isValid) {
-      throw AppError.badRequest('Invalid or expired email verification OTP.');
-    }
+    // Verify OTP through production engine
+    await otpService.verifyOtp({
+      identifier: targetEmail,
+      enteredOtp: otp,
+      purpose: OtpPurpose.EMAIL_VERIFICATION,
+    });
 
     // Update database
     const updatedUser = await prisma.user.update({
@@ -130,7 +120,8 @@ export class VerificationService {
    */
   public async sendPhoneOtp(
     userId: string,
-    phoneInput?: string
+    phoneInput?: string,
+    ipAddress?: string
   ): Promise<{ target: string; expiresAt: Date; message: string }> {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -164,13 +155,18 @@ export class VerificationService {
       });
     }
 
-    // Generate 6-digit OTP using OtpService abstraction
-    const { expiresAt } = await otpService.generateOtp(targetPhone, 'PHONE_VERIFICATION');
+    // Generate & dispatch real SMS OTP via ProductionOtpService
+    const result = await otpService.generateAndSendOtp({
+      identifier: targetPhone,
+      channel: OtpChannel.PHONE,
+      purpose: OtpPurpose.PHONE_VERIFICATION,
+      ipAddress,
+    });
 
     return {
-      target: targetPhone,
-      expiresAt,
-      message: 'Verification OTP has been sent to your mobile phone number.',
+      target: result.identifier,
+      expiresAt: result.expiresAt,
+      message: `Verification OTP has been sent to mobile number ${result.identifier}. Valid for 10 minutes.`,
     };
   }
 
@@ -197,11 +193,12 @@ export class VerificationService {
       throw AppError.badRequest('No phone number associated with this account to verify.');
     }
 
-    // Verify OTP
-    const isValid = await otpService.verifyOtp(targetPhone, otp, 'PHONE_VERIFICATION');
-    if (!isValid) {
-      throw AppError.badRequest('Invalid or expired mobile verification OTP.');
-    }
+    // Verify OTP through production engine
+    await otpService.verifyOtp({
+      identifier: targetPhone,
+      enteredOtp: otp,
+      purpose: OtpPurpose.PHONE_VERIFICATION,
+    });
 
     // Update database
     const updatedUser = await prisma.user.update({

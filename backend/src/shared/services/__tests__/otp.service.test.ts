@@ -1,62 +1,241 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MockOtpService } from '../otp.service';
+import { OtpChannel, OtpPurpose, OtpStatus } from '@prisma/client';
+import { prisma } from '../../../prisma/client';
+import { otpService } from '../otp.service';
+import { smsService } from '../sms.service';
 
-describe('OtpService', () => {
-  let otpService: MockOtpService;
+describe('ProductionOtpService', () => {
+  const testPhone = '+919876543210';
+  const testEmail = 'otp_production_test@example.com';
 
-  beforeEach(() => {
-    otpService = new MockOtpService();
+  beforeEach(async () => {
+    // Clear test records
+    await prisma.otpVerification.deleteMany({
+      where: {
+        identifier: {
+          in: [
+            testPhone,
+            testEmail,
+            '+919999999999',
+            '+919876500001',
+            '+919876500002',
+            '+919876500003',
+            'cooldown_test@example.com',
+            'lockout_test@example.com',
+            'reuse_test@example.com',
+          ],
+        },
+      },
+    });
   });
 
-  it('should generate a 6-digit numeric OTP with an expiration date', async () => {
-    const phone = '+919876543210';
-    const result = await otpService.generateOtp(phone, 'PHONE_VERIFICATION');
+  it('should generate a 6-digit numeric OTP and store SHA-256 hashed record in DB', async () => {
+    const result = await otpService.generateAndSendOtp({
+      identifier: testPhone,
+      channel: OtpChannel.PHONE,
+      purpose: OtpPurpose.PHONE_VERIFICATION,
+    });
 
-    expect(result.otp).toBeDefined();
-    expect(result.otp).toHaveLength(6);
-    expect(/^\d{6}$/.test(result.otp)).toBe(true);
+    expect(result.identifier).toBe(testPhone);
     expect(result.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    expect(result.cooldownSeconds).toBe(60);
+
+    // Verify DB record
+    const dbRecord = await prisma.otpVerification.findFirst({
+      where: {
+        identifier: testPhone,
+        purpose: OtpPurpose.PHONE_VERIFICATION,
+        status: OtpStatus.PENDING,
+      },
+    });
+
+    expect(dbRecord).toBeDefined();
+    expect(dbRecord?.otpHash).toBeDefined();
+    expect(dbRecord?.otpHash).toHaveLength(64); // SHA-256 hex string
+    expect(dbRecord?.status).toBe(OtpStatus.PENDING);
+    expect(dbRecord?.attempts).toBe(0);
   });
 
-  it('should verify the correct OTP', async () => {
-    const email = 'user@example.com';
-    const { otp } = await otpService.generateOtp(email, 'EMAIL_VERIFICATION');
+  it('should verify the correct dynamically generated OTP and mark it VERIFIED', async () => {
+    await otpService.generateAndSendOtp({
+      identifier: testEmail,
+      channel: OtpChannel.EMAIL,
+      purpose: OtpPurpose.EMAIL_VERIFICATION,
+    });
 
-    const isValid = await otpService.verifyOtp(email, otp, 'EMAIL_VERIFICATION');
+    const dynamicOtp = otpService.getTestGeneratedOtp(testEmail, OtpPurpose.EMAIL_VERIFICATION);
+    expect(dynamicOtp).toBeDefined();
+    expect(dynamicOtp).toHaveLength(6);
+
+    const isValid = await otpService.verifyOtp({
+      identifier: testEmail,
+      enteredOtp: dynamicOtp!,
+      purpose: OtpPurpose.EMAIL_VERIFICATION,
+    });
+
     expect(isValid).toBe(true);
 
-    // After verification, OTP should be cleared
-    const isReused = await otpService.verifyOtp(email, otp, 'EMAIL_VERIFICATION');
-    expect(isReused).toBe(false);
+    // Verify DB record status is updated to VERIFIED
+    const dbRecord = await prisma.otpVerification.findFirst({
+      where: {
+        identifier: testEmail,
+        purpose: OtpPurpose.EMAIL_VERIFICATION,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    expect(dbRecord?.status).toBe(OtpStatus.VERIFIED);
+    expect(dbRecord?.verifiedAt).toBeDefined();
   });
 
-  it('should reject an incorrect OTP', async () => {
-    const phone = '+919876543210';
-    await otpService.generateOtp(phone, 'PHONE_VERIFICATION');
+  it('should strictly reject fake bypass OTP 123456', async () => {
+    await otpService.generateAndSendOtp({
+      identifier: testPhone,
+      channel: OtpChannel.PHONE,
+      purpose: OtpPurpose.PHONE_VERIFICATION,
+    });
 
-    const isValid = await otpService.verifyOtp(phone, '000000', 'PHONE_VERIFICATION');
-    expect(isValid).toBe(false);
+    const realOtp = otpService.getTestGeneratedOtp(testPhone, OtpPurpose.PHONE_VERIFICATION);
+
+    // Only test if the randomly generated OTP is not coincidentally 123456
+    if (realOtp !== '123456') {
+      await expect(
+        otpService.verifyOtp({
+          identifier: testPhone,
+          enteredOtp: '123456',
+          purpose: OtpPurpose.PHONE_VERIFICATION,
+        })
+      ).rejects.toThrow(/Invalid verification code/);
+    }
   });
 
-  it('should accept universal demo test OTP 123456', async () => {
-    const phone = '+919999999999';
-    const isValid = await otpService.verifyOtp(phone, '123456', 'PHONE_VERIFICATION');
-    expect(isValid).toBe(true);
+  it('should reject incorrect OTP and decrement remaining attempts', async () => {
+    await otpService.generateAndSendOtp({
+      identifier: testPhone,
+      channel: OtpChannel.PHONE,
+      purpose: OtpPurpose.PHONE_VERIFICATION,
+    });
+
+    await expect(
+      otpService.verifyOtp({
+        identifier: testPhone,
+        enteredOtp: '000000',
+        purpose: OtpPurpose.PHONE_VERIFICATION,
+      })
+    ).rejects.toThrow(/4 attempts remaining/);
+
+    const dbRecord = await prisma.otpVerification.findFirst({
+      where: {
+        identifier: testPhone,
+        purpose: OtpPurpose.PHONE_VERIFICATION,
+        status: OtpStatus.PENDING,
+      },
+    });
+
+    expect(dbRecord?.attempts).toBe(1);
   });
 
-  it('should invalidate after maximum failed attempts', async () => {
-    const email = 'test@example.com';
-    const { otp } = await otpService.generateOtp(email, 'LOGIN');
+  it('should lock out and invalidate after 5 failed attempts', async () => {
+    const lockoutEmail = 'lockout_test@example.com';
+    await otpService.generateAndSendOtp({
+      identifier: lockoutEmail,
+      channel: OtpChannel.EMAIL,
+      purpose: OtpPurpose.LOGIN,
+    });
 
-    for (let i = 0; i < 5; i++) {
-      await otpService.verifyOtp(email, '999999', 'LOGIN');
+    const realOtp = otpService.getTestGeneratedOtp(lockoutEmail, OtpPurpose.LOGIN);
+
+    // Attempt 1 to 4: Failures with attempts remaining
+    for (let i = 1; i <= 4; i++) {
+      await expect(
+        otpService.verifyOtp({
+          identifier: lockoutEmail,
+          enteredOtp: '111111',
+          purpose: OtpPurpose.LOGIN,
+        })
+      ).rejects.toThrow();
     }
 
-    // 6th attempt with wrong OTP clears it
-    await otpService.verifyOtp(email, '999999', 'LOGIN');
+    // 5th attempt: Exceeds max attempts
+    await expect(
+      otpService.verifyOtp({
+        identifier: lockoutEmail,
+        enteredOtp: '111111',
+        purpose: OtpPurpose.LOGIN,
+      })
+    ).rejects.toThrow(/Maximum verification attempts exceeded/);
 
-    // Even with correct OTP, it should now fail
-    const isValidAfterExceeded = await otpService.verifyOtp(email, otp, 'LOGIN');
-    expect(isValidAfterExceeded).toBe(false);
+    // Even with the correct OTP, verification is now rejected
+    await expect(
+      otpService.verifyOtp({
+        identifier: lockoutEmail,
+        enteredOtp: realOtp!,
+        purpose: OtpPurpose.LOGIN,
+      })
+    ).rejects.toThrow(/No pending verification code found|Maximum verification attempts exceeded/);
+
+    const dbRecord = await prisma.otpVerification.findFirst({
+      where: {
+        identifier: lockoutEmail,
+        purpose: OtpPurpose.LOGIN,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    expect(dbRecord?.status).toBe(OtpStatus.MAX_ATTEMPTS_EXCEEDED);
+  });
+
+  it('should enforce 60-second resend cooldown before allowing another dispatch', async () => {
+    const cooldownEmail = 'cooldown_test@example.com';
+
+    await otpService.generateAndSendOtp({
+      identifier: cooldownEmail,
+      channel: OtpChannel.EMAIL,
+      purpose: OtpPurpose.LOGIN,
+    });
+
+    // Immediate second request must be blocked by cooldown
+    await expect(
+      otpService.generateAndSendOtp({
+        identifier: cooldownEmail,
+        channel: OtpChannel.EMAIL,
+        purpose: OtpPurpose.LOGIN,
+      })
+    ).rejects.toThrow(/Please wait \d+ seconds before requesting another OTP/);
+  });
+
+  it('should prevent reuse of already verified OTPs', async () => {
+    const reuseEmail = 'reuse_test@example.com';
+
+    await otpService.generateAndSendOtp({
+      identifier: reuseEmail,
+      channel: OtpChannel.EMAIL,
+      purpose: OtpPurpose.LOGIN,
+    });
+
+    const realOtp = otpService.getTestGeneratedOtp(reuseEmail, OtpPurpose.LOGIN);
+
+    // First verification: Success
+    const firstVerify = await otpService.verifyOtp({
+      identifier: reuseEmail,
+      enteredOtp: realOtp!,
+      purpose: OtpPurpose.LOGIN,
+    });
+    expect(firstVerify).toBe(true);
+
+    // Second verification attempt with same OTP: Blocked
+    await expect(
+      otpService.verifyOtp({
+        identifier: reuseEmail,
+        enteredOtp: realOtp!,
+        purpose: OtpPurpose.LOGIN,
+      })
+    ).rejects.toThrow(/No pending verification code found/);
+  });
+
+  it('should normalize 10-digit Indian mobile numbers to E.164 format', () => {
+    expect(smsService.normalizeToE164('9876543210')).toBe('+919876543210');
+    expect(smsService.normalizeToE164('+919876543210')).toBe('+919876543210');
+    expect(smsService.normalizeToE164('+14155552671')).toBe('+14155552671');
   });
 });

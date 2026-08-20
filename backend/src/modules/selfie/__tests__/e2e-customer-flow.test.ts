@@ -2,11 +2,13 @@ import { describe, it, expect, afterAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../../app';
 import { prisma } from '../../../prisma/client';
+import { otpService } from '../../../shared/services/otp.service';
 import {
   ApplicationStage,
   EligibilityResult,
   IdType,
   AdminReviewStatus,
+  OtpPurpose,
 } from '@prisma/client';
 
 const app = createApp();
@@ -70,10 +72,15 @@ describe('Full End-to-End Customer Loan Application Chain (Signup through Selfie
       .post('/api/v1/verification/email/send')
       .set('Authorization', `Bearer ${token}`);
 
+    const emailOtp = otpService.getTestGeneratedOtp(
+      borrower.email.toLowerCase(),
+      OtpPurpose.EMAIL_VERIFICATION
+    );
+
     const verifyEmailRes = await request(app)
       .post('/api/v1/verification/email/verify')
       .set('Authorization', `Bearer ${token}`)
-      .send({ otp: '123456' }); // Universal bypass demo OTP
+      .send({ otp: emailOtp });
 
     expect(verifyEmailRes.status).toBe(200);
     expect(verifyEmailRes.body.data.emailVerified).toBe(true);
@@ -83,10 +90,15 @@ describe('Full End-to-End Customer Loan Application Chain (Signup through Selfie
       .post('/api/v1/verification/phone/send')
       .set('Authorization', `Bearer ${token}`);
 
+    const phoneOtp = otpService.getTestGeneratedOtp(
+      borrower.phone,
+      OtpPurpose.PHONE_VERIFICATION
+    );
+
     const verifyPhoneRes = await request(app)
       .post('/api/v1/verification/phone/verify')
       .set('Authorization', `Bearer ${token}`)
-      .send({ otp: '123456' });
+      .send({ otp: phoneOtp });
 
     expect(verifyPhoneRes.status).toBe(200);
     expect(verifyPhoneRes.body.data.phoneVerified).toBe(true);

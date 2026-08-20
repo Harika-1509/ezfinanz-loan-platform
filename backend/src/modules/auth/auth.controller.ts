@@ -66,7 +66,7 @@ export class AuthController {
    */
   public async sendOtp(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await authService.sendLoginOtp(req.body);
+      const result = await authService.sendLoginOtp(req.body, req.ip);
       sendSuccess(res, result, result.message);
     } catch (error) {
       next(error);

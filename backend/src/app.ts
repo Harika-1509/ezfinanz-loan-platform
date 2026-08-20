@@ -32,10 +32,28 @@ export const createApp = (): Application => {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }) as any
   );
+  // Strict CORS: Allow only intended frontend origin(s), never a wildcard
+  const allowedOrigins = [
+    config.CORS_ORIGIN,
+    config.FRONTEND_URL,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ].filter(Boolean);
+
   app.use(
     cors({
-      origin: config.CORS_ORIGIN,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, automated test suites)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS security policy.'));
+      },
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+      exposedHeaders: ['Set-Cookie'],
     }) as any
   );
   app.use(express.json({ limit: '10mb' }));

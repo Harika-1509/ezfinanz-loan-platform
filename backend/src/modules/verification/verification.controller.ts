@@ -9,7 +9,7 @@ export class VerificationController {
       if (!req.user) {
         throw AppError.unauthorized('Authentication required.');
       }
-      const result = await verificationService.sendEmailOtp(req.user.userId, req.body?.email);
+      const result = await verificationService.sendEmailOtp(req.user.userId, req.body?.email, req.ip);
       sendSuccess(res, result, result.message, 200);
     } catch (error) {
       next(error);
@@ -34,7 +34,7 @@ export class VerificationController {
       if (!req.user) {
         throw AppError.unauthorized('Authentication required.');
       }
-      const result = await verificationService.sendPhoneOtp(req.user.userId, req.body?.phone);
+      const result = await verificationService.sendPhoneOtp(req.user.userId, req.body?.phone, req.ip);
       sendSuccess(res, result, result.message, 200);
     } catch (error) {
       next(error);

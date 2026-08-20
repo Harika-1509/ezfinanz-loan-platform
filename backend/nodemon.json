@@ -1,7 +1,20 @@
 {
   "watch": ["src"],
   "ext": "ts,json",
-  "ignore": ["src/**/*.test.ts", "src/**/__tests__/**", "node_modules", "dist", "uploads"],
+  "ignore": [
+    "src/**/*.test.ts",
+    "src/**/__tests__/**",
+    "node_modules",
+    "dist",
+    "uploads",
+    "prisma/migrations",
+    ".git",
+    "../frontend"
+  ],
   "exec": "tsx src/server.ts",
-  "delay": "300"
+  "delay": 500,
+  "signal": "SIGUSR2",
+  "env": {
+    "NODE_ENV": "development"
+  }
 }

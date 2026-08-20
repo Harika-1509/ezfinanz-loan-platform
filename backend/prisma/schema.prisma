@@ -55,6 +55,24 @@ enum AdminReviewStatus {
   REJECTED
 }
 
+enum OtpChannel {
+  PHONE
+  EMAIL
+}
+
+enum OtpPurpose {
+  LOGIN
+  EMAIL_VERIFICATION
+  PHONE_VERIFICATION
+}
+
+enum OtpStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  MAX_ATTEMPTS_EXCEEDED
+}
+
 // ==========================================
 // MODELS
 // ==========================================
@@ -216,4 +234,27 @@ model Selfie {
 
   @@index([adminStatus])
   @@map("selfies")
+}
+
+model OtpVerification {
+  id          String      @id @default(uuid())
+  identifier  String      // E.164 phone (+91...) or lowercase email
+  channel     OtpChannel
+  purpose     OtpPurpose  @default(LOGIN)
+  otpHash     String?     @map("otp_hash") // SHA-256 HMAC hash of (salt + OTP), never plaintext
+  provider    String      @default("local_secure") // "twilio_verify", "twilio_sms", "resend", "smtp", "local_secure"
+  providerRef String?     @map("provider_ref") // Twilio SID or message ID
+  status      OtpStatus   @default(PENDING)
+  attempts    Int         @default(0)
+  maxAttempts Int         @default(5) @map("max_attempts")
+  expiresAt   DateTime    @map("expires_at")
+  lastSentAt  DateTime    @default(now()) @map("last_sent_at")
+  verifiedAt  DateTime?   @map("verified_at")
+  ipAddress   String?     @map("ip_address")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@index([identifier, purpose, status])
+  @@index([expiresAt])
+  @@map("otp_verifications")
 }

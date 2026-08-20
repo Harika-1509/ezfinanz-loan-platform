@@ -1,39 +1,128 @@
 /**
  * EZFinanz Loan Platform - Backend Entry Point
  *
- * ARCHITECTURAL CHOICE JUSTIFICATION:
- * We selected Express.js with TypeScript and Prisma over NestJS for this solution because:
- * 1. Express provides a lightweight, explicit, and unopinionated layered architecture
- *    (controllers -> services -> routes -> middleware) with zero reflection/decorator runtime overhead.
- * 2. Seamless integration with Prisma ORM and Zod schemas provides end-to-end type safety
- *    without requiring heavy NestJS dependency injection abstractions or complex module metadata.
- * 3. Fast compilation, minimal cold-start times, and clear transparent error handling perfectly
- *    suit loan workflow services, financial calculations, and KYC verification pipelines.
+ * Resilient Server Lifecycle & Process Management for Seamless Development & Production
  */
 
+import { Server } from 'http';
 import { createApp } from './app';
 import { config } from './config';
+import { connectDatabase, disconnectDatabase } from './prisma/client';
 
-const app = createApp();
+let server: Server | null = null;
+let isShuttingDown = false;
 
-const server = app.listen(config.PORT, () => {
-  console.log(`
+/**
+ * Start Express HTTP server with port-retry resilience (prevents EADDRINUSE crashes during hot reload)
+ */
+async function startServerWithRetry(
+  port: number,
+  maxRetries = 5,
+  delayMs = 400
+): Promise<Server> {
+  const app = createApp();
+
+  return new Promise((resolve, reject) => {
+    let currentAttempt = 0;
+
+    function tryListen() {
+      currentAttempt++;
+      const srv = app.listen(port);
+
+      srv.once('listening', () => {
+        console.log(`
   ======================================================
-  🚀 EZFinanz Backend API running on port ${config.PORT}
+  🚀 EZFinanz Backend API running on port ${port}
   📡 Environment: ${config.NODE_ENV}
-  🏥 Root Health Check:   http://localhost:${config.PORT}/health
-  🏥 API v1 Health Check: http://localhost:${config.PORT}${config.API_PREFIX}/health
+  🏥 Root Health Check:   http://localhost:${port}/health
+  🏥 API v1 Health Check: http://localhost:${port}${config.API_PREFIX}/health
   ======================================================
-  `);
-});
+        `);
+        resolve(srv);
+      });
 
-const handleShutdown = (signal: string) => {
-  console.log(`\nReceived ${signal}. Gracefully shutting down...`);
-  server.close(() => {
-    console.log('HTTP server closed. Exiting process.');
-    process.exit(0);
+      srv.once('error', (err: any) => {
+        if (err.code === 'EADDRINUSE' && currentAttempt < maxRetries) {
+          console.warn(
+            `⚠️ [Server] Port ${port} in use (attempt ${currentAttempt}/${maxRetries}). Waiting ${delayMs}ms for previous instance to release socket...`
+          );
+          setTimeout(() => {
+            tryListen();
+          }, delayMs);
+        } else {
+          console.error(`❌ [Server] Failed to bind to port ${port}:`, err.message || err);
+          reject(err);
+        }
+      });
+    }
+
+    tryListen();
   });
-};
+}
 
-process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-process.on('SIGINT', () => handleShutdown('SIGINT'));
+/**
+ * Graceful shutdown handler for signals (SIGTERM, SIGINT, SIGUSR2)
+ */
+async function gracefulShutdown(signal: string, callback?: () => void): Promise<void> {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  console.log(`\n⏳ [Process] Received ${signal}. Starting graceful shutdown...`);
+
+  if (server) {
+    server.close(async () => {
+      console.log('🔌 [Server] HTTP server closed.');
+      await disconnectDatabase();
+      console.log('✅ [Process] Clean shutdown complete.');
+      if (callback) {
+        callback();
+      } else {
+        process.exit(0);
+      }
+    });
+  } else {
+    await disconnectDatabase();
+    if (callback) {
+      callback();
+    } else {
+      process.exit(0);
+    }
+  }
+}
+
+async function bootstrap(): Promise<void> {
+  // 1. Warmup PostgreSQL connection
+  await connectDatabase();
+
+  // 2. Start HTTP server with EADDRINUSE retry protection
+  server = await startServerWithRetry(config.PORT);
+
+  // 3. Nodemon restart handler (SIGUSR2)
+  process.once('SIGUSR2', async () => {
+    await gracefulShutdown('SIGUSR2', () => {
+      process.kill(process.pid, 'SIGUSR2');
+    });
+  });
+
+  // 4. Standard termination signals
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+  // 5. Catch unhandled errors gracefully without abrupt process termination
+  process.on('unhandledRejection', (reason: any) => {
+    console.error('⚠️ [Process] Unhandled Promise Rejection:', reason?.message || reason);
+  });
+
+  process.on('uncaughtException', (error: Error) => {
+    console.error('❌ [Process] Uncaught Exception:', error?.message || error);
+    // Don't crash immediately in development on transient errors
+    if (config.NODE_ENV === 'production') {
+      gracefulShutdown('uncaughtException');
+    }
+  });
+}
+
+bootstrap().catch((err) => {
+  console.error('❌ [Server] Fatal startup error:', err);
+  process.exit(1);
+});

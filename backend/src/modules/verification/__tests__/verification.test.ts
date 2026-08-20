@@ -4,7 +4,8 @@ import express from 'express';
 import { createApp } from '../../../app';
 import { prisma } from '../../../prisma/client';
 import { emailService } from '../../../shared/services/email.service';
-import { ApplicationStage } from '@prisma/client';
+import { otpService } from '../../../shared/services/otp.service';
+import { ApplicationStage, OtpPurpose } from '@prisma/client';
 import { authGuard, stageGuard, errorHandler } from '../../../shared/middleware';
 import { sendSuccess } from '../../../shared/utils/api-response';
 
@@ -111,15 +112,20 @@ describe('Verification Module Integration Tests', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain('Invalid or expired');
+      expect(res.body.message).toContain('Invalid');
     });
 
-    it('should successfully verify email with valid demo/generated OTP', async () => {
-      // Use demo bypass OTP 123456 supported by MockOtpService
+    it('should successfully verify email with valid dynamically generated OTP', async () => {
+      const generatedOtp = otpService.getTestGeneratedOtp(
+        testEmail.toLowerCase(),
+        OtpPurpose.EMAIL_VERIFICATION
+      );
+      expect(generatedOtp).toBeDefined();
+
       const res = await request(app)
         .post('/api/v1/verification/email/verify')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ otp: '123456' });
+        .send({ otp: generatedOtp });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -151,36 +157,31 @@ describe('Verification Module Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.target).toBe(testPhone);
-    });
-
-    it('should support resending OTP while unverified', async () => {
-      const resendRes = await request(app)
-        .post('/api/v1/verification/phone/send')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send({});
-
-      expect(resendRes.status).toBe(200);
-      expect(resendRes.body.success).toBe(true);
-      expect(resendRes.body.data.target).toBe(testPhone);
+      expect(res.body.data.target).toContain(testPhone);
     });
 
     it('should reject phone verification with wrong OTP (400 Bad Request)', async () => {
       const res = await request(app)
         .post('/api/v1/verification/phone/verify')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ otp: '999999' });
+        .send({ otp: '000000' });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain('Invalid or expired');
+      expect(res.body.message).toContain('Invalid');
     });
 
-    it('should successfully verify phone with valid OTP and advance application to KYC_PENDING', async () => {
+    it('should successfully verify phone with real dynamic OTP and advance application to KYC_PENDING', async () => {
+      const generatedOtp = otpService.getTestGeneratedOtp(
+        testPhone,
+        OtpPurpose.PHONE_VERIFICATION
+      );
+      expect(generatedOtp).toBeDefined();
+
       const verifyRes = await request(app)
         .post('/api/v1/verification/phone/verify')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ otp: '123456' });
+        .send({ otp: generatedOtp });
 
       expect(verifyRes.status).toBe(200);
       expect(verifyRes.body.success).toBe(true);

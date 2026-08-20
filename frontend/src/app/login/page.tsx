@@ -17,31 +17,15 @@ import {
   Loader2,
   ShieldCheck,
 } from 'lucide-react';
+import { loginSchema, phoneOtpLoginSchema, verifyOtpSchema, extractFieldErrors } from '../../lib/validation';
 import { useAuth } from '../../contexts/auth-context';
-import { apiClient, ApiError } from '../../lib/api-client';
+import { apiClient } from '../../lib/api-client';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card';
 import { OtpInput } from '../../components/ui/otp-input';
 import { GuestRoute } from '../../components/auth/route-guards';
-
-const loginSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(1, 'Email address is required')
-    .email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-const phoneSchema = z.object({
-  phone: z
-    .string()
-    .trim()
-    .regex(/^[6-9]\d{9}$/, 'Please enter a valid 10-digit Indian mobile number'),
-});
 
 export default function LoginPage() {
   const { login, setMockSession } = useAuth();
@@ -104,10 +88,13 @@ export default function LoginPage() {
         }
       }, 500);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Failed to sign in. Please verify your credentials.');
+      const { fieldErrors: extractedFieldErrors, generalMessage } = extractFieldErrors(
+        err,
+        'Failed to sign in. Please verify your credentials.'
+      );
+      setErrorMessage(generalMessage);
+      if (Object.keys(extractedFieldErrors).length > 0) {
+        setFieldErrors(extractedFieldErrors);
       }
     } finally {
       setIsLoading(false);
@@ -119,7 +106,7 @@ export default function LoginPage() {
     setErrorMessage(null);
     setFieldErrors({});
 
-    const validation = phoneSchema.safeParse({ phone });
+    const validation = phoneOtpLoginSchema.safeParse({ phone });
     if (!validation.success) {
       setFieldErrors({ phone: validation.error.errors[0].message });
       return;
@@ -132,10 +119,13 @@ export default function LoginPage() {
       setCountdown(30);
       setSuccessMessage('6-digit login OTP sent to your phone.');
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Failed to send OTP. Please try again.');
+      const { fieldErrors: extractedFieldErrors, generalMessage } = extractFieldErrors(
+        err,
+        'Failed to send OTP. Please try again.'
+      );
+      setErrorMessage(generalMessage);
+      if (Object.keys(extractedFieldErrors).length > 0) {
+        setFieldErrors(extractedFieldErrors);
       }
     } finally {
       setIsLoading(false);
@@ -147,8 +137,9 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (otp.length < 6) {
-      setErrorMessage('Please enter the complete 6-digit OTP.');
+    const validation = verifyOtpSchema.safeParse({ otp });
+    if (!validation.success) {
+      setErrorMessage(validation.error.errors[0].message);
       return;
     }
 
@@ -173,10 +164,13 @@ export default function LoginPage() {
         }
       }, 500);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Invalid or expired OTP. Please try again.');
+      const { fieldErrors: extractedFieldErrors, generalMessage } = extractFieldErrors(
+        err,
+        'Invalid or expired OTP. Please try again.'
+      );
+      setErrorMessage(generalMessage);
+      if (Object.keys(extractedFieldErrors).length > 0) {
+        setFieldErrors(extractedFieldErrors);
       }
     } finally {
       setIsLoading(false);
@@ -227,31 +221,35 @@ export default function LoginPage() {
           <Card className="border-slate-200/80 shadow-glass backdrop-blur-md">
             <CardHeader className="pb-4">
               {/* Mode Toggle Tabs */}
-              <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-slate-100 p-1.5 dark:bg-slate-800" role="tablist">
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={authMode === 'password'}
                   onClick={() => {
                     setAuthMode('password');
                     setErrorMessage(null);
                   }}
-                  className={`rounded-lg py-2 text-xs font-bold transition-all ${
+                  className={`inline-flex items-center justify-center rounded-lg py-2 px-3 text-xs font-bold transition-all min-h-[38px] leading-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 ${
                     authMode === 'password'
                       ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
                   Password Login
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={authMode === 'otp'}
                   onClick={() => {
                     setAuthMode('otp');
                     setErrorMessage(null);
                   }}
-                  className={`rounded-lg py-2 text-xs font-bold transition-all ${
+                  className={`inline-flex items-center justify-center rounded-lg py-2 px-3 text-xs font-bold transition-all min-h-[38px] leading-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 ${
                     authMode === 'otp'
                       ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
                   Phone OTP Login
@@ -388,9 +386,9 @@ export default function LoginPage() {
                   ) : (
                     <form onSubmit={handleVerifyPhoneOtp} className="space-y-4">
                       <div className="text-center space-y-1">
-                        <Label>Enter 6-Digit OTP sent to +91 {phone}</Label>
-                        <p className="text-[11px] text-slate-400">
-                          (Demo bypass OTP: <span className="font-mono font-bold text-emerald-600">123456</span>)
+                        <Label>Enter 6-Digit Code sent to +91 {phone}</Label>
+                        <p className="text-[11px] text-slate-500">
+                          Enter the SMS verification code dispatched to your mobile.
                         </p>
                       </div>
 
@@ -409,23 +407,36 @@ export default function LoginPage() {
                         {isLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Verifying...
+                            Verifying OTP...
                           </>
                         ) : (
                           'Verify OTP & Sign In'
                         )}
                       </Button>
 
-                      <div className="text-center">
+                      <div className="flex items-center justify-between text-xs pt-1">
+                        <button
+                          type="button"
+                          disabled={isLoading}
+                          onClick={() => {
+                            setOtpSent(false);
+                            setOtp('');
+                            setErrorMessage(null);
+                          }}
+                          className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline"
+                        >
+                          ← Change Number
+                        </button>
+
                         <button
                           type="button"
                           disabled={countdown > 0 || isLoading}
                           onClick={handleSendPhoneOtp}
-                          className="text-xs font-semibold text-emerald-600 hover:underline disabled:opacity-50"
+                          className="font-semibold text-emerald-600 hover:underline disabled:opacity-50"
                         >
                           {countdown > 0
                             ? `Resend OTP in ${countdown}s`
-                            : 'Resend OTP'}
+                            : 'Resend Code'}
                         </button>
                       </div>
                     </form>

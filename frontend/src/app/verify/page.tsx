@@ -13,8 +13,9 @@ import {
   Sparkles,
   RefreshCw,
 } from 'lucide-react';
+import { verifyOtpSchema, phoneOtpLoginSchema, extractFieldErrors } from '../../lib/validation';
 import { useAuth, ApplicationStage } from '../../contexts/auth-context';
-import { apiClient, ApiError } from '../../lib/api-client';
+import { apiClient } from '../../lib/api-client';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -99,11 +100,8 @@ export default function VerificationPage() {
         setActiveStep('phone');
       }
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Failed to load verification status.');
-      }
+      const { generalMessage } = extractFieldErrors(err, 'Failed to load verification status.');
+      setErrorMessage(generalMessage);
     } finally {
       setIsLoading(false);
     }
@@ -124,11 +122,8 @@ export default function VerificationPage() {
       setEmailCountdown(30);
       setSuccessMessage(`Verification OTP sent to ${targetEmail}`);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Failed to dispatch email OTP.');
-      }
+      const { generalMessage } = extractFieldErrors(err, 'Failed to dispatch email OTP.');
+      setErrorMessage(generalMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -140,8 +135,9 @@ export default function VerificationPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (emailOtp.length < 6) {
-      setErrorMessage('Please enter the full 6-digit email OTP.');
+    const validation = verifyOtpSchema.safeParse({ otp: emailOtp });
+    if (!validation.success) {
+      setErrorMessage(validation.error.errors[0].message);
       return;
     }
 
@@ -156,11 +152,8 @@ export default function VerificationPage() {
         setActiveStep('phone');
       }, 800);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Invalid or expired OTP. Please try again.');
-      }
+      const { generalMessage } = extractFieldErrors(err, 'Invalid or expired OTP. Please try again.');
+      setErrorMessage(generalMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -168,8 +161,9 @@ export default function VerificationPage() {
 
   // Send Phone OTP
   const handleSendPhoneOtp = async () => {
-    if (!targetPhone || !/^[6-9]\d{9}$/.test(targetPhone)) {
-      setErrorMessage('Please provide a valid 10-digit Indian phone number.');
+    const validation = phoneOtpLoginSchema.safeParse({ phone: targetPhone });
+    if (!validation.success) {
+      setErrorMessage(validation.error.errors[0].message);
       return;
     }
 
@@ -182,11 +176,8 @@ export default function VerificationPage() {
       setPhoneCountdown(30);
       setSuccessMessage(`Verification OTP sent to +91 ${targetPhone}`);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Failed to dispatch mobile phone OTP.');
-      }
+      const { generalMessage } = extractFieldErrors(err, 'Failed to dispatch mobile phone OTP.');
+      setErrorMessage(generalMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -198,8 +189,9 @@ export default function VerificationPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (phoneOtp.length < 6) {
-      setErrorMessage('Please enter the full 6-digit mobile OTP.');
+    const validation = verifyOtpSchema.safeParse({ otp: phoneOtp });
+    if (!validation.success) {
+      setErrorMessage(validation.error.errors[0].message);
       return;
     }
 
@@ -219,11 +211,8 @@ export default function VerificationPage() {
         router.push('/apply');
       }, 1200);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage('Invalid or expired OTP. Please try again.');
-      }
+      const { generalMessage } = extractFieldErrors(err, 'Invalid or expired OTP. Please try again.');
+      setErrorMessage(generalMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -391,8 +380,8 @@ export default function VerificationPage() {
                     <form onSubmit={handleVerifyEmailOtp} className="space-y-4">
                       <div className="text-center space-y-1">
                         <Label>Enter 6-Digit Email Verification Code</Label>
-                        <p className="text-[11px] text-slate-400">
-                          (Demo bypass OTP: <span className="font-mono font-bold text-emerald-600">123456</span>)
+                        <p className="text-[11px] text-slate-500">
+                          We sent a security code to <strong className="text-slate-800 dark:text-slate-200">{targetEmail}</strong>.
                         </p>
                       </div>
 
@@ -421,18 +410,31 @@ export default function VerificationPage() {
                         )}
                       </Button>
 
-                      <div className="text-center">
+                      <div className="flex items-center justify-between text-xs pt-1">
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            setEmailOtpSent(false);
+                            setEmailOtp('');
+                            setErrorMessage(null);
+                          }}
+                          className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline"
+                        >
+                          ← Change Email
+                        </button>
+
                         <button
                           type="button"
                           disabled={emailCountdown > 0 || isSubmitting}
                           onClick={handleSendEmailOtp}
-                          className="text-xs font-semibold text-emerald-600 hover:underline disabled:opacity-50 inline-flex items-center space-x-1"
+                          className="font-semibold text-emerald-600 hover:underline disabled:opacity-50 inline-flex items-center space-x-1"
                         >
                           <RefreshCw className="h-3 w-3 mr-1" />
                           <span>
                             {emailCountdown > 0
-                              ? `Resend Email OTP in ${emailCountdown}s`
-                              : 'Resend Email OTP'}
+                              ? `Resend in ${emailCountdown}s`
+                              : 'Resend Code'}
                           </span>
                         </button>
                       </div>
@@ -480,8 +482,8 @@ export default function VerificationPage() {
                     <form onSubmit={handleVerifyPhoneOtp} className="space-y-4">
                       <div className="text-center space-y-1">
                         <Label>Enter 6-Digit SMS Code sent to +91 {targetPhone}</Label>
-                        <p className="text-[11px] text-slate-400">
-                          (Demo bypass OTP: <span className="font-mono font-bold text-emerald-600">123456</span>)
+                        <p className="text-[11px] text-slate-500">
+                          Security code sent via SMS. Valid for 10 minutes.
                         </p>
                       </div>
 
@@ -510,18 +512,31 @@ export default function VerificationPage() {
                         )}
                       </Button>
 
-                      <div className="text-center">
+                      <div className="flex items-center justify-between text-xs pt-1">
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            setPhoneOtpSent(false);
+                            setPhoneOtp('');
+                            setErrorMessage(null);
+                          }}
+                          className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline"
+                        >
+                          ← Change Number
+                        </button>
+
                         <button
                           type="button"
                           disabled={phoneCountdown > 0 || isSubmitting}
                           onClick={handleSendPhoneOtp}
-                          className="text-xs font-semibold text-emerald-600 hover:underline disabled:opacity-50 inline-flex items-center space-x-1"
+                          className="font-semibold text-emerald-600 hover:underline disabled:opacity-50 inline-flex items-center space-x-1"
                         >
                           <RefreshCw className="h-3 w-3 mr-1" />
                           <span>
                             {phoneCountdown > 0
-                              ? `Resend Phone OTP in ${phoneCountdown}s`
-                              : 'Resend Phone OTP'}
+                              ? `Resend in ${phoneCountdown}s`
+                              : 'Resend Code'}
                           </span>
                         </button>
                       </div>

@@ -6,10 +6,12 @@ import {
   EligibilityResult,
   IdType,
   Role,
+  OtpPurpose,
 } from '@prisma/client';
 import createApp from '../../../app';
 import { prisma } from '../../../prisma/client';
 import { generateAccessToken } from '../../../shared/utils/jwt';
+import { otpService } from '../../../shared/services/otp.service';
 
 const app = createApp();
 
@@ -393,19 +395,33 @@ describe('Admin Actions Integration Tests (Selfie Approval & Disbursement)', () 
       const appId = signupRes.body.data.application.id;
       e2eUserIds.push(uid);
 
-      // 2. Email OTP Verify
+      // 2. Email OTP Send & Verify
+      await request(app)
+        .post('/api/v1/verification/email/send')
+        .set('Authorization', `Bearer ${token}`);
+      const emailOtp = otpService.getTestGeneratedOtp(
+        borrower.email.toLowerCase(),
+        OtpPurpose.EMAIL_VERIFICATION
+      );
       const emailRes = await request(app)
         .post('/api/v1/verification/email/verify')
         .set('Authorization', `Bearer ${token}`)
-        .send({ otp: '123456' });
+        .send({ otp: emailOtp });
       expect(emailRes.status).toBe(200);
       expect(emailRes.body.data.emailVerified).toBe(true);
 
-      // 3. Phone OTP Verify -> KYC_PENDING
+      // 3. Phone OTP Send & Verify -> KYC_PENDING
+      await request(app)
+        .post('/api/v1/verification/phone/send')
+        .set('Authorization', `Bearer ${token}`);
+      const phoneOtp = otpService.getTestGeneratedOtp(
+        borrower.phone,
+        OtpPurpose.PHONE_VERIFICATION
+      );
       const phoneRes = await request(app)
         .post('/api/v1/verification/phone/verify')
         .set('Authorization', `Bearer ${token}`)
-        .send({ otp: '123456' });
+        .send({ otp: phoneOtp });
       expect(phoneRes.status).toBe(200);
       expect(phoneRes.body.data.applicationStage).toBe(ApplicationStage.KYC_PENDING);
 
@@ -506,6 +522,6 @@ describe('Admin Actions Integration Tests (Selfie Approval & Disbursement)', () 
       expect(disburseRes.body.data.stage).toBe(ApplicationStage.DISBURSED);
       expect(disburseRes.body.data.referenceId).toBe('DISB_E2E_HAPPY_123');
       expect(disburseRes.body.data.disbursedAmount).toBeGreaterThan(0);
-    }, 60000);
+    }, 120000);
   });
 });

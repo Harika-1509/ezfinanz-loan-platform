@@ -1,11 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MockEmailService } from '../email.service';
+import { emailService } from '../email.service';
 
 describe('EmailService', () => {
-  let emailService: MockEmailService;
-
   beforeEach(() => {
-    emailService = new MockEmailService();
+    emailService.clearSentEmails();
   });
 
   it('should send an email and return a messageId', async () => {
@@ -17,7 +15,6 @@ describe('EmailService', () => {
 
     expect(result.success).toBe(true);
     expect(result.messageId).toBeDefined();
-    expect(result.messageId.startsWith('msg_')).toBe(true);
   });
 
   it('should retrieve sent emails filtered by recipient', async () => {
@@ -51,5 +48,10 @@ describe('EmailService', () => {
     expect(emailService.getSentEmails()).toHaveLength(1);
     emailService.clearSentEmails();
     expect(emailService.getSentEmails()).toHaveLength(0);
+  });
+
+  it('should mask email addresses appropriately for privacy', () => {
+    expect(emailService.maskEmail('john.doe@example.com')).toBe('j***e@example.com');
+    expect(emailService.maskEmail('al@test.com')).toBe('a*@test.com');
   });
 });

@@ -1,26 +1,30 @@
 # Dependencies
 node_modules/
+*/node_modules/
 .pnp
 .pnp.js
 .yarn/
 
-# Environment Variables
+# Environment Variables & Secrets
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env
+.env*
+!.env.example
 !*.env.example
+backend/.env
+frontend/.env.local
+frontend/.env
 
 # Next.js build output
 .next/
+frontend/.next/
 out/
 
 # Backend and TypeScript build output
 dist/
+backend/dist/
 build/
 *.tsbuildinfo
+frontend/*.tsbuildinfo
 
 # Logs
 npm-debug.log*
@@ -30,7 +34,7 @@ pnpm-debug.log*
 lerna-debug.log*
 *.log
 
-# Coverage directory used by tools like istanbul / jest / c8 / vitest
+# Coverage directory
 coverage/
 *.lcov
 .nyc_output/
@@ -53,5 +57,6 @@ Thumbs.db
 *.sqlite3
 *.db
 uploads/
+backend/uploads/
 tmp/
 temp/

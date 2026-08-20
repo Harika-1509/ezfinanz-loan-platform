@@ -69,6 +69,42 @@ export class AppError extends Error {
   ): ValidationError {
     return new ValidationError(message, details, errorCode);
   }
+
+  static tooManyRequests(
+    message: string = 'Too many requests',
+    details?: any,
+    errorCode: string = 'RATE_LIMIT_EXCEEDED'
+  ): TooManyRequestsError {
+    return new TooManyRequestsError(message, errorCode, details);
+  }
+
+  static internal(
+    message: string = 'Internal server error',
+    details?: any,
+    errorCode: string = 'INTERNAL_SERVER_ERROR'
+  ): InternalServerError {
+    return new InternalServerError(message, errorCode, details);
+  }
+}
+
+export class TooManyRequestsError extends AppError {
+  constructor(
+    message: string = 'Too many requests',
+    errorCode: string = 'RATE_LIMIT_EXCEEDED',
+    details?: any
+  ) {
+    super(message, 429, errorCode, details);
+  }
+}
+
+export class InternalServerError extends AppError {
+  constructor(
+    message: string = 'Internal server error',
+    errorCode: string = 'INTERNAL_SERVER_ERROR',
+    details?: any
+  ) {
+    super(message, 500, errorCode, details);
+  }
 }
 
 export class BadRequestError extends AppError {

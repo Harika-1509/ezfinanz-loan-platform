@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { Role, ApplicationStage, User, Application } from '@prisma/client';
+import { Role, ApplicationStage, User, Application, OtpPurpose, OtpChannel } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import { SignupInput, LoginInput, SendAuthOtpInput, VerifyAuthOtpInput } from './auth.schema';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../../shared/utils/jwt';
@@ -496,17 +496,23 @@ export class AuthService {
    * Phone OTP Login: Send OTP
    */
   public async sendLoginOtp(
-    input: SendAuthOtpInput
+    input: SendAuthOtpInput,
+    ipAddress?: string
   ): Promise<{ target: string; expiresAt: Date; message: string }> {
     const phone = input.phone.trim();
-    const purpose = input.purpose || 'LOGIN';
+    const purpose = OtpPurpose.LOGIN;
 
-    const { otp, expiresAt } = await otpService.generateOtp(phone, purpose);
+    const result = await otpService.generateAndSendOtp({
+      identifier: phone,
+      channel: OtpChannel.PHONE,
+      purpose,
+      ipAddress,
+    });
 
     return {
-      target: phone,
-      expiresAt,
-      message: `Login OTP sent to mobile number +91 ${phone}`,
+      target: result.identifier,
+      expiresAt: result.expiresAt,
+      message: `Login OTP sent to mobile number ${result.identifier}`,
     };
   }
 
@@ -516,16 +522,20 @@ export class AuthService {
   public async verifyLoginOtp(input: VerifyAuthOtpInput): Promise<AuthResult> {
     const phone = input.phone.trim();
     const otp = input.otp.trim();
-    const purpose = input.purpose || 'LOGIN';
+    const purpose = OtpPurpose.LOGIN;
 
-    const isValid = await otpService.verifyOtp(phone, otp, purpose);
-    if (!isValid) {
-      throw AppError.badRequest('Invalid or expired OTP. Please try again.');
-    }
+    await otpService.verifyOtp({
+      identifier: phone,
+      enteredOtp: otp,
+      purpose,
+    });
 
-    // Check if user exists by phone
-    let user = await prisma.user.findUnique({
-      where: { phone },
+    // Check if user exists by phone (or normalized E.164)
+    const normalizedPhone = otpService.normalizeIdentifier(phone, OtpChannel.PHONE);
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [{ phone }, { phone: normalizedPhone }, { phone: phone.replace(/^\+91/, '') }],
+      },
       include: {
         applications: {
           orderBy: { createdAt: 'desc' },
