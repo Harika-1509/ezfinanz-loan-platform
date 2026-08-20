@@ -46,6 +46,16 @@ export const errorHandler = (
     );
   }
 
+  // Prisma Client Initialization Error
+  if (err instanceof Prisma.PrismaClientInitializationError) {
+    return sendError(
+      res,
+      `Database connection failed: ${err.message}`,
+      500,
+      'DATABASE_INITIALIZATION_ERROR'
+    );
+  }
+
   // Handle SyntaxError / JSON parse errors
   if (err instanceof SyntaxError && 'status' in err && (err as any).status === 400) {
     return sendError(res, 'Malformed JSON payload in request', 400, 'INVALID_JSON');
