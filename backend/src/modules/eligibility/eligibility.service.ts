@@ -113,6 +113,7 @@ export class EligibilityService {
   public async getEligibilityStatus(userId: string): Promise<{
     application: Application;
     eligibilityCheck: EligibilityCheck | null;
+    calculation?: EligibilityCalculationResult | null;
   }> {
     const application = await prisma.application.findFirst({
       where: { userId },
@@ -126,9 +127,23 @@ export class EligibilityService {
       throw AppError.notFound('No loan application found.');
     }
 
+    let calculation: EligibilityCalculationResult | null = null;
+    if (application.eligibilityCheck) {
+      const check = application.eligibilityCheck;
+      calculation = calculateEligibility({
+        income: Number(check.income),
+        requestedAmount: Number(check.requestedAmount),
+        creditScore: check.creditScore,
+        existingDebts: Number(check.existingDebts),
+        employerName: check.employerName,
+        designation: check.designation,
+      });
+    }
+
     return {
       application,
       eligibilityCheck: application.eligibilityCheck,
+      calculation,
     };
   }
 }

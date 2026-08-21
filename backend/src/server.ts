@@ -42,6 +42,12 @@ async function startServerWithRetry(
       });
 
       srv.once('error', (err: any) => {
+        try {
+          srv.close();
+        } catch {
+          // ignore
+        }
+
         if (err.code === 'EADDRINUSE' && currentAttempt < maxRetries) {
           console.warn(
             `⚠️ [Server] Port ${port} in use (attempt ${currentAttempt}/${maxRetries}). Waiting ${delayMs}ms for previous instance to release socket...`
@@ -70,6 +76,9 @@ async function gracefulShutdown(signal: string, callback?: () => void): Promise<
   console.log(`\n⏳ [Process] Received ${signal}. Starting graceful shutdown...`);
 
   if (server) {
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
     server.close(async () => {
       console.log('🔌 [Server] HTTP server closed.');
       await disconnectDatabase();

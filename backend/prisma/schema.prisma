@@ -160,7 +160,7 @@ model EligibilityCheck {
   existingDebts     Decimal           @map("existing_debts") @db.Decimal(12, 2)
   employerName      String            @map("employer_name")
   designation       String            @map("designation")
-  dtiRatio          Decimal           @map("dti_ratio") @db.Decimal(5, 2)
+  dtiRatio          Decimal           @map("dti_ratio") @db.Decimal(10, 2)
   result            EligibilityResult
   maxApprovedAmount Decimal?          @map("max_approved_amount") @db.Decimal(12, 2)
   createdAt         DateTime          @default(now()) @map("created_at")

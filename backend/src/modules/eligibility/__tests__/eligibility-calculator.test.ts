@@ -138,6 +138,21 @@ describe('Eligibility Pure Calculation Engine (Unit Tests)', () => {
       expect(result.reasons.some((r) => r.includes(`${MIN_INCOME_THRESHOLD.toLocaleString('en-IN')}`))).toBe(true);
     });
 
+    it('should return NOT_ELIGIBLE with specific rejection reasons for low salary (e.g. ₹10,030) and high DTI', () => {
+      const result = calculateEligibility({
+        income: 10030,
+        requestedAmount: 300000,
+        creditScore: 720,
+        existingDebts: 15000, // DTI = 149.55%
+      });
+
+      expect(result.result).toBe(EligibilityResult.NOT_ELIGIBLE);
+      expect(result.maxApprovedAmount).toBe(0);
+      expect(result.dtiRatio).toBe(149.55);
+      expect(result.reasons.some((r) => r.includes('10,030') && r.includes('15,000'))).toBe(true);
+      expect(result.reasons.some((r) => r.includes('149.6%') && r.includes('50%'))).toBe(true);
+    });
+
     it('should handle zero or negative income safely', () => {
       const result = calculateEligibility({
         income: 0,

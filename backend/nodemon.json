@@ -13,7 +13,6 @@
   ],
   "exec": "tsx src/server.ts",
   "delay": 500,
-  "signal": "SIGUSR2",
   "env": {
     "NODE_ENV": "development"
   }

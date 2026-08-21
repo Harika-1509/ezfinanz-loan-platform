@@ -17,6 +17,8 @@ import {
   Info,
   RefreshCw,
   Percent,
+  XCircle,
+  Edit3,
 } from 'lucide-react';
 import { eligibilitySchema, extractFieldErrors } from '../../lib/validation';
 import { useAuth } from '../../contexts/auth-context';
@@ -66,18 +68,20 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
       try {
         const res = await apiClient.get<any>('/eligibility/status');
         const check = res.data?.eligibilityCheck;
+        const calc = res.data?.calculation;
         if (check && check.result) {
-          const score = check.creditScore || 750;
+          const score = check.creditScore || calc?.creditScore || 750;
           const band: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' =
-            score >= 750 ? 'EXCELLENT' : score >= 650 ? 'GOOD' : score >= 600 ? 'FAIR' : 'POOR';
+            calc?.creditScoreBand || (score >= 750 ? 'EXCELLENT' : score >= 650 ? 'GOOD' : score >= 600 ? 'FAIR' : 'POOR');
 
           setResult({
             decision: check.result,
             creditScore: Number(score),
             creditBand: band,
-            dtiRatio: Number(check.dtiRatio || 0),
+            dtiRatio: Number(check.dtiRatio || calc?.dtiRatio || 0),
             maxEligibleAmount: Number(check.maxApprovedAmount || 0),
             interestRate: Number(score) >= 750 ? 12.5 : Number(score) >= 650 ? 14.5 : 16.5,
+            reasons: calc?.reasons || [],
           });
         }
       } catch {
@@ -541,61 +545,160 @@ export function EligibilityForm({ onSuccess }: EligibilityFormProps) {
               </div>
             )}
 
-            {/* Outcome 3: NOT_ELIGIBLE (Graceful Non-Dead-End) */}
+            {/* Outcome 3: NOT_ELIGIBLE (Clear Specific Rejection Reasons & Non-Dead-End Recovery) */}
             {result.decision === 'NOT_ELIGIBLE' && (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-white space-y-4">
-                <div className="flex items-center space-x-3.5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 shrink-0">
-                    <AlertCircle className="h-6 w-6 text-slate-600" />
+              <div className="rounded-2xl border-2 border-rose-300 bg-rose-50/60 p-6 text-slate-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-white space-y-5 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 shrink-0 shadow-xs">
+                    <XCircle className="h-7 w-7 text-rose-600 dark:text-rose-400" />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                      Application Criteria Not Met
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-md bg-rose-100 px-2.5 py-0.5 text-xs font-bold text-rose-800 dark:bg-rose-900 dark:text-rose-200">
+                        UNDERWRITING OUTCOME: REJECTED
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-black text-rose-950 dark:text-rose-100">
+                      Loan Eligibility Assessment: Not Approved
                     </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                      Based on current debt-to-income ({result.dtiRatio.toFixed(1)}%) or bureau parameters, automated underwriting cannot approve the requested amount at this time.
+                    <p className="text-xs text-rose-800/90 dark:text-rose-300/90 font-medium">
+                      Based on our automated risk & credit policy parameters, this application does not meet the minimum criteria for the requested amount at this time.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Specific Rejection Reasons Box */}
+                <div className="rounded-xl border border-rose-200 bg-white p-4.5 dark:border-rose-900/80 dark:bg-slate-950 space-y-3 shadow-xs">
+                  <div className="flex items-center space-x-2 text-rose-700 dark:text-rose-400">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider">
+                      Specific Reason(s) for Rejection:
+                    </h4>
+                  </div>
+                  <ul className="space-y-2">
+                    {result.reasons && result.reasons.length > 0 ? (
+                      result.reasons.map((reason, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-start space-x-2.5 text-xs text-slate-700 dark:text-slate-200 font-medium"
+                        >
+                          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-rose-100 text-[10px] font-bold text-rose-700 dark:bg-rose-900 dark:text-rose-300 mt-0.5">
+                            ✕
+                          </span>
+                          <span className="leading-relaxed">{reason}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="flex items-start space-x-2.5 text-xs text-slate-700 dark:text-slate-200 font-medium">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-rose-100 text-[10px] font-bold text-rose-700 dark:bg-rose-900 dark:text-rose-300 mt-0.5">
+                          ✕
+                        </span>
+                        <span className="leading-relaxed">
+                          Financial risk metrics and debt obligations exceed permissible underwriting benchmarks.
+                        </span>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+
+                {/* Assessment Parameters Snapshot */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-rose-100 dark:border-rose-950/60 shadow-xs">
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Monthly Income</p>
+                    <p className={`text-base font-black tabular-nums ${Number(monthlyIncome) < 15000 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                      {formatCurrency(Number(monthlyIncome))}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-rose-100 dark:border-rose-950/60 shadow-xs">
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Existing Debts</p>
+                    <p className="text-base font-black text-slate-800 dark:text-slate-200 tabular-nums">
+                      {formatCurrency(Number(existingDebts || 0))}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-rose-100 dark:border-rose-950/60 shadow-xs">
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Computed DTI</p>
+                    <p className={`text-base font-black tabular-nums ${result.dtiRatio > 50 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                      {Number(result.dtiRatio || 0).toFixed(1)}%
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-white/90 p-3 dark:bg-slate-900/90 border border-rose-100 dark:border-rose-950/60 shadow-xs">
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bureau Score</p>
+                    <p className={`text-base font-black tabular-nums ${result.creditScore < 600 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                      {result.creditScore}{' '}
+                      <span className="text-[10px] font-bold text-slate-500">
+                        ({result.creditBand})
+                      </span>
                     </p>
                   </div>
                 </div>
 
                 {/* Helpful Guidance Checklist */}
-                <div className="rounded-xl bg-white p-4.5 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-2.5">
+                <div className="rounded-xl bg-white/95 p-4 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-2.5">
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Recommended Actions to Qualify:
+                    Recommended Steps to Qualify for Future Approval:
                   </p>
-                  <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                  <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
                     <li className="flex items-start space-x-2">
-                      <span className="text-emerald-600 font-bold">•</span>
+                      <span className="text-rose-500 font-bold">•</span>
                       <span>
-                        <strong>Request a Lower Loan Amount:</strong> Reducing your principal decreases monthly debt burden.
+                        <strong>Request a Lower Loan Amount:</strong> Reducing your requested principal lowers monthly debt exposure.
                       </span>
                     </li>
                     <li className="flex items-start space-x-2">
-                      <span className="text-emerald-600 font-bold">•</span>
+                      <span className="text-rose-500 font-bold">•</span>
                       <span>
-                        <strong>Clear Active Credit Card / Personal Loans:</strong> Lowering existing EMIs will significantly improve your DTI ratio.
+                        <strong>Clear Existing Loan/Card Dues:</strong> Reducing active EMIs directly brings down your DTI ratio below 50%.
                       </span>
                     </li>
                     <li className="flex items-start space-x-2">
-                      <span className="text-emerald-600 font-bold">•</span>
+                      <span className="text-rose-500 font-bold">•</span>
                       <span>
-                        <strong>Re-apply with Co-Borrower:</strong> Adding eligible household income provides higher sanction headroom.
+                        <strong>Add Verified Household Income:</strong> Re-applying with updated salary documents provides higher borrowing limit.
                       </span>
                     </li>
                   </ul>
                 </div>
 
-                <div className="pt-2 flex items-center space-x-3">
+                {/* Recovery Action Buttons */}
+                <div className="pt-2 flex flex-wrap items-center gap-3">
                   <Button
                     type="button"
                     onClick={() => {
                       setResult(null);
+                    }}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-bold h-11 px-5 shadow-sm rounded-xl text-xs dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 cursor-pointer"
+                  >
+                    <Edit3 className="h-3.5 w-3.5 mr-1.5" />
+                    Modify Salary / Debt Inputs
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setResult(null);
+                      setRequestedAmount('50000');
+                    }}
+                    className="border-rose-300 text-rose-700 hover:bg-rose-100/60 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-950 font-bold h-11 px-4 text-xs rounded-xl cursor-pointer"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                    Try with Lower Amount (₹50,000)
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setResult(null);
                       setRequestedAmount('100000');
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 px-6 shadow-sm rounded-xl"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 font-bold h-11 px-4 text-xs rounded-xl cursor-pointer"
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Re-calculate with Lower Amount (₹1 Lakh)
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                    Try with ₹1 Lakh
                   </Button>
                 </div>
               </div>

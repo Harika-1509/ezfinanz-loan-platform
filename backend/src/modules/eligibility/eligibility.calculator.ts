@@ -83,9 +83,9 @@ export function calculateEligibility(
     };
   }
 
-  // 2. Compute Debt-to-Income (DTI) Ratio (Percentage rounded to 2 decimal places)
+  // 2. Compute Debt-to-Income (DTI) Ratio (Percentage rounded to 2 decimal places, safely clamped)
   const rawDti = (Math.max(0, existingDebts) / income) * 100;
-  const dtiRatio = Math.round(rawDti * 100) / 100;
+  const dtiRatio = Math.min(99999.99, Math.round(rawDti * 100) / 100);
 
   // 3. Determine Credit Score Band
   const creditScoreBand = getCreditScoreBand(creditScore);
@@ -95,7 +95,7 @@ export function calculateEligibility(
 
   if (income < MIN_INCOME_THRESHOLD) {
     reasons.push(
-      `Monthly income of ₹${income.toLocaleString('en-IN')} is below the minimum threshold of ₹${MIN_INCOME_THRESHOLD.toLocaleString('en-IN')}.`
+      `Monthly income of ₹${income.toLocaleString('en-IN')} is below the minimum threshold of ₹${MIN_INCOME_THRESHOLD.toLocaleString('en-IN')} required for loan approval.`
     );
     isHardDeclined = true;
   }
@@ -109,7 +109,7 @@ export function calculateEligibility(
 
   if (dtiRatio > MAX_ALLOWED_DTI_RATIO) {
     reasons.push(
-      `Debt-to-Income (DTI) ratio of ${dtiRatio.toFixed(1)}% exceeds the maximum allowable limit of ${MAX_ALLOWED_DTI_RATIO}%.`
+      `Debt-to-Income (DTI) ratio of ${dtiRatio.toFixed(1)}% exceeds the maximum allowable limit of ${MAX_ALLOWED_DTI_RATIO}%. Existing debt obligations are too high relative to income.`
     );
     isHardDeclined = true;
   }
